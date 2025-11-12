@@ -1,0 +1,30 @@
+# --- Ambiente Virtual ---
+# Ignora a pasta do ambiente virtual, que é gigante e específica da sua máquina.
+venv/
+*.local
+
+# --- Python Cache ---
+# Ignora os arquivos de "cache" que o Python cria para rodar mais rápido.
+__pycache__/
+*.pyc
+
+# --- Banco de Dados ---
+# Ignora seu arquivo de banco de dados, que muda a todo momento.
+# Você envia o *código* (app.py), não os *dados* (o .db).
+*.db
+*.sqlite3
+
+# --- Segredos (Importante para o futuro) ---
+# Ignora arquivos que guardarão senhas ou chaves de API.
+.env
+.env.*
+
+# --- Arquivos de IDE/Editor ---
+# Ignora pastas de configuração do seu editor de código (ex: VS Code, PyCharm).
+.vscode/
+.idea/
+
+# --- Arquivos de Sistema Operacional ---
+# Ignora arquivos de sistema (ex: Mac e Windows).
+.DS_Store
+Thumbs.db
