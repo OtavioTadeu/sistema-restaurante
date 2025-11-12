@@ -1,6 +1,7 @@
 # --- Ambiente Virtual ---
 # Ignora a pasta do ambiente virtual, que é gigante e específica da sua máquina.
 venv/
+venv/*
 *.local
 
 # --- Python Cache ---

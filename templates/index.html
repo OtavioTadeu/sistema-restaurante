@@ -1,41 +1,53 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Faça seu Pedido</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
-    
+
     <style>
-        .container { 
-            max-width: 1000px; /* Mais largo para o carrinho */
-            display: flex; /* Divide a tela em duas colunas */
+        .container {
+            max-width: 1000px;
+            /* Mais largo para o carrinho */
+            display: flex;
+            /* Divide a tela em duas colunas */
             gap: 20px;
         }
-        .cardapio-coluna { flex: 2; } /* Coluna do cardápio (ocupa 2/3) */
-        .carrinho-coluna { 
-            flex: 1; /* Coluna do carrinho (ocupa 1/3) */
+
+        .cardapio-coluna {
+            flex: 2;
+        }
+
+        /* Coluna do cardápio (ocupa 2/3) */
+        .carrinho-coluna {
+            flex: 1;
+            /* Coluna do carrinho (ocupa 1/3) */
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 15px;
             background-color: #f9f9f9;
             /* Faz o carrinho "flutuar" - opcional */
-            position: sticky; 
-            top: 20px; 
+            position: sticky;
+            top: 20px;
             align-self: flex-start;
         }
+
         .carrinho-item {
             border-bottom: 1px dashed #ccc;
             padding: 10px 0;
             font-size: 0.9em;
         }
+
         .carrinho-total {
             font-size: 1.2em;
             font-weight: bold;
             text-align: right;
             margin-top: 15px;
         }
+
         .add-btn {
             background-color: #007bff;
             color: white;
@@ -45,45 +57,46 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .add-btn:hover { background-color: #0056b3; }
+
+        .add-btn:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
-        
+
         <div class="cardapio-coluna">
             <h1>Cardápio do Dia</h1>
             <p>Escolha seu prato e o tamanho desejado.</p>
-            
+
             <div class="cardapio-lista">
                 {% for item in cardapio_hoje %}
-                    <div class="prato">
-                        <h2>{{ item.prato.nome_prato }}</h2>
-                        <p class="descricao">
-                            Acompanha: {{ item.descricao_dia }}
-                        </p>
-                        
-                        {% for tam in tamanhos %}
-                            <div class="tamanho-opcao">
-                                <div>
-                                    <span class="tamanho-nome">{{ tam.nome }}</span>
-                                    <span class="tamanho-preco">
-                                        R$ {{ "%.2f"|format(tam.preco) }}
-                                    </span>
-                                </div>
-                                <button class="add-btn" 
-                                    data-prato-id="{{ item.id }}"
-                                    data-prato-nome="{{ item.prato.nome_prato }}"
-                                    data-tamanho-id="{{ tam.id }}"
-                                    data-tamanho-nome="{{ tam.nome }}"
-                                    data-preco="{{ tam.preco }}">
-                                    +
-                                </button>
-                            </div>
-                        {% endfor %}
+                <div class="prato">
+                    <h2>{{ item.prato.nome_prato }}</h2>
+                    <p class="descricao">
+                        Acompanha: {{ item.descricao_dia }}
+                    </p>
+
+                    {% for tam in tamanhos %}
+                    <div class="tamanho-opcao">
+                        <div>
+                            <span class="tamanho-nome">{{ tam.nome }}</span>
+                            <span class="tamanho-preco">
+                                R$ {{ "%.2f"|format(tam.preco) }}
+                            </span>
+                        </div>
+                        <button class="add-btn" data-prato-id="{{ item.id }}"
+                            data-prato-nome="{{ item.prato.nome_prato }}" data-tamanho-id="{{ tam.id }}"
+                            data-tamanho-nome="{{ tam.nome }}" data-preco="{{ tam.preco }}">
+                            +
+                        </button>
                     </div>
+                    {% endfor %}
+                </div>
                 {% else %}
-                    <p>Nenhum prato disponível no cardápio de hoje.</p>
+                <p>Nenhum prato disponível no cardápio de hoje.</p>
                 {% endfor %}
             </div>
         </div>
@@ -91,21 +104,56 @@
         -->
         <div class="carrinho-coluna">
             <h2>🛒 Meu Pedido</h2>
-            
+
             <div id="lista-carrinho">
                 <p style="color: #777;">Seu carrinho está vazio.</p>
             </div>
-            
+
             <div class="carrinho-total">
                 <span>Total:</span>
                 <span id="total-carrinho">R$ 0.00</span>
             </div>
-
+            <button type="button" id="clear-cart-btn"
+                style="width: 100%; padding: 5px; margin-top: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                Limpar Carrinho
+            </button>
             <div id="checkout-form" style="margin-top: 20px;">
-                </div>
+                <form id="form-pedido">
+                    <h3>Seus Dados</h3>
+
+                    <label for="nome_cliente">Nome Completo:</label>
+                    <input type="text" id="nome_cliente" name="nome_cliente" required
+                        style="width: 95%; padding: 8px; margin-bottom: 10px;">
+
+                    <label for="telefone_cliente">Telefone (para contato/entrega):</label>
+                    <input type="tel" id="telefone_cliente" name="telefone_cliente" required
+                        style="width: 95%; padding: 8px; margin-bottom: 10px;">
+
+                    <label>Tipo de Pedido:</label>
+                    <div style="margin-bottom: 10px;">
+                        <input type="radio" id="tipo_retirada" name="tipo_pedido" value="RETIRADA" checked>
+                        <label for="tipo_retirada">Vou Retirar</label>
+                        <br>
+                        <input type="radio" id="tipo_entrega" name="tipo_pedido" value="ENTREGA">
+                        <label for="tipo_entrega">Entrega (Delivery)</label>
+                    </div>
+
+                    <div id="campo_endereco" style="display: none;">
+                        <label for="endereco_cliente">Endereço de Entrega:</label>
+                        <input type="text" id="endereco_cliente" name="endereco_cliente"
+                            style="width: 95%; padding: 8px; margin-bottom: 10px;">
+                    </div>
+
+                    <button type="submit" id="btn-finalizar" style="width: 100%; padding: 10px 15px; font-size: 1.1em;"
+                        class="add-btn">
+                        Finalizar Pedido
+                    </button>
+                </form>
+            </div>
         </div>
 
     </div> -->
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
+
 </html>
