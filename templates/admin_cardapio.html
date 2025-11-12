@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Cardápio do Dia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <a href="/admin">&larr; Voltar ao Admin</a>
+
+        <h1>Gerenciar Cardápio do Dia</h1>
+        <p>Adicione os pratos do catálogo que estarão disponíveis hoje.</p>
+
+        <div class="form-section">
+            <h2>Adicionar Prato ao Cardápio</h2>
+
+            <form action="/admin/add_cardapio" method="POST">
+                <label for="prato_id">Escolha um Prato do Catálogo:</label>
+                <select id="prato_id" name="prato_id" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                    {% for prato in pratos_catalogo %}
+                    <option value="{{ prato.id }}">{{ prato.nome_prato }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="descricao_dia">
+                    Acompanhamentos de Hoje (Opcional):
+                    <br>
+                    <small>(Deixe em branco para usar a descrição padrão)</small>
+                </label>
+                <input type="text" id="descricao_dia" name="descricao_dia">
+
+                <button type="submit">Adicionar ao Cardápio</button>
+            </form>
+        </div>
+        <div class="form-section" style="background-color: #fff0f0; border-color: red;">
+            <h2>Limpar Cardápio</h2>
+            <p>Atenção: Isso apagará TODOS os itens do cardápio de hoje.</p>
+            <form action="{{ url_for('clear_cardapio') }}" method="POST">
+                <button type="submit" style="background-color: red;">
+                    Limpar Cardápio do Dia
+                </button>
+            </form>
+        </div>
+        <div class="list-section">
+            <h2>Pratos Disponíveis Hoje</h2>
+            <ul>
+                {% for item in cardapio_hoje %}
+                <li>
+                    <strong>{{ item.prato.nome_prato }}</strong>
+                    <br>
+                    <small>Acompanha: {{ item.descricao_dia }}</small>
+                    <br>
+                    <small style="color: {% if item.disponivel %}green{% else %}red{% endif %};">
+                        (Status: {% if item.disponivel %}Disponível{% else %}Esgotado{% endif %})
+                    </small>
+                    <br>
+                    <a href="{{ url_for('toggle_disponivel', item_id=item.id) }}">
+                        (Mudar Status)
+                    </a>
+                    <a href="{{ url_for('remove_cardapio', item_id=item.id) }}" style="color: red; margin-left: 10px;"
+                        onclick="return confirm('Remover este item do cardápio de hoje?');">
+                        (Remover)
+                    </a>
+                </li>
+                {% else %}
+                <li>Nenhum prato adicionado ao cardápio de hoje.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

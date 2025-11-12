@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Prato</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('admin_pratos') }}">&larr; Voltar para Pratos</a>
+        
+        <h1>Editar Prato do Catálogo</h1>
+
+        <div class="form-section">
+            <form action="{{ url_for('edit_prato', prato_id=prato.id) }}" method="POST">
+                
+                <label for="nome_prato">Nome do Prato:</label>
+                <input type="text" id="nome_prato" name="nome_prato" value="{{ prato.nome_prato }}" required>
+                
+                <label for="descricao_base">Acompanhamentos Padrão:</label>
+                <input type="text" id="descricao_base" name="descricao_base" value="{{ prato.descricao_base }}">
+                
+                <button type="submit">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

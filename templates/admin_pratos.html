@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Pratos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <a href="/admin">&larr; Voltar ao Admin</a>
+
+        <h1>Gerenciar Pratos do Catálogo</h1>
+        <p>Aqui você cadastra todos os pratos que o restaurante sabe fazer.</p>
+
+        <div class="form-section">
+            <h2>Cadastrar Novo Prato</h2>
+
+            <form action="/admin/add_prato" method="POST">
+                <label for="nome_prato">Nome do Prato (ex: Frango à Parmegiana):</label>
+                <input type="text" id="nome_prato" name="nome_prato" required>
+
+                <label for="descricao_base">Acompanhamentos Padrão (ex: Arroz, feijão, fritas):</label>
+                <input type="text" id="descricao_base" name="descricao_base">
+
+                <button type="submit">Salvar Prato</button>
+            </form>
+        </div>
+
+        <div class="list-section">
+            <h2>Pratos Cadastrados</h2>
+            <ul>
+                {% for prato in pratos %}
+                <li>
+                    <a href="{{ url_for('delete_prato', prato_id=prato.id) }}"
+                        style="color: red; float: right; text-decoration: none;"
+                        onclick="return confirm('Tem certeza que quer excluir este prato do catálogo?');">[X]</a>
+                    <a href="{{ url_for('edit_prato', prato_id=prato.id) }}"
+                        style="float: right; margin-right: 10px;">(Editar)</a>
+                    <strong>{{ prato.nome_prato }}</strong>
+                    <br>
+                    <small>{{ prato.descricao_base }}</small>
+                </li>
+                {% else %}
+                <li>Nenhum prato cadastrado ainda.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

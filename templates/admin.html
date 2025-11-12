@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Painel Admin</h1>
+        <a href="/admin/pratos">Gerenciar Pratos</a>
+        <br> <a href="/admin/cardapio">Gerenciar Cardápio do Dia</a>
+        <div class="form-section">
+            <h2>Cadastrar Novo Tamanho</h2>
+            <form action="/admin/add_tamanho" method="POST">
+                <label for="nome">Nome do Tamanho (ex: Pequeno):</label>
+                <input type="text" id="nome" name="nome" required>
+
+                <label for="preco">Preço (ex: 20.00):</label>
+                <input type="number" step="0.01" id="preco" name="preco" required>
+
+                <button type="submit">Salvar Tamanho</button>
+            </form>
+        </div>
+
+        <div class="list-section">
+            <h2>Tamanhos Cadastrados</h2>
+            <ul>
+                {% for tam in tamanhos %}
+                <li>
+                    <a href="{{ url_for('delete_tamanho', tamanho_id=tam.id) }}"
+                        style="color: red; float: right; text-decoration: none;"
+                        onclick="return confirm('Tem certeza?');">[X]</a>
+                    <a href="{{ url_for('edit_tamanho', tamanho_id=tam.id) }}"
+                        style="float: right; margin-right: 10px;">(Editar)</a>  
+                    <strong>{{ tam.nome }}</strong> - R$ {{ "%.2f"|format(tam.preco) }}
+                </li>
+                {% else %}
+                <li>Nenhum tamanho cadastrado ainda.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>
