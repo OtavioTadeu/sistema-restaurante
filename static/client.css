@@ -1,0 +1,43 @@
+/* Sobrescreve o container para ficar mais largo */
+.container {
+    max-width: 800px;
+}
+
+.prato {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+}
+
+.prato h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.prato .descricao {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.tamanho-opcao {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-top: 1px dashed #ccc;
+}
+
+.tamanho-opcao:first-of-type {
+    border-top: 1px solid #ccc;
+}
+
+.tamanho-nome {
+    font-weight: bold;
+}
+
+.tamanho-preco {
+    font-weight: bold;
+    color: #007bff;
+}

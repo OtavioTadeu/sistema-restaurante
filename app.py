@@ -97,9 +97,23 @@ class ItemPedido(db.Model):
 
 @app.route('/')
 def home():
-    # Esta será a página principal para o CLIENTE
-    # Por enquanto, só um placeholder
-    return "Página do Cliente (em breve)"
+    # Esta é a página principal do cliente (cardápio)
+    try:
+        # 1. Busca os pratos disponíveis hoje
+        cardapio_hoje = CardapioDoDia.query.filter_by(disponivel=True).all()
+        
+        # 2. Busca todos os tamanhos e seus preços
+        tamanhos = Tamanho.query.order_by(Tamanho.preco).all() # Ordena do mais barato ao mais caro
+        
+    except Exception as e:
+        print(f"Erro ao buscar o cardápio principal: {e}")
+        cardapio_hoje = []
+        tamanhos = []
+
+    # 3. Envia esses dados para um novo template 'index.html'
+    return render_template('index.html', 
+                           cardapio_hoje=cardapio_hoje, 
+                           tamanhos=tamanhos)
 
 @app.route('/admin')
 def admin():

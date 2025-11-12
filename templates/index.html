@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faça seu Pedido</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Cardápio do Dia</h1>
+        <p>Escolha seu prato e o tamanho desejado.</p>
+
+        <div class="cardapio-lista">
+
+            {% for item in cardapio_hoje %}
+            <div class="prato">
+                <h2>{{ item.prato.nome_prato }}</h2>
+                <p class="descricao">
+                    Acompanha: {{ item.descricao_dia }}
+                </p>
+
+                {% for tam in tamanhos %}
+                <div class="tamanho-opcao">
+                    <span class="tamanho-nome">{{ tam.nome }}</span>
+                    <span class="tamanho-preco">
+                        R$ {{ "%.2f"|format(tam.preco) }}
+                    </span>
+                </div>
+                {% endfor %}
+
+            </div>
+            {% else %}
+            <p>Nenhum prato disponível no cardápio de hoje. Volte mais tarde!</p>
+            {% endfor %}
+
+        </div>
+    </div>
+</body>
+
+</html>
