@@ -48,7 +48,7 @@
             margin-top: 15px;
         }
 
-        .add-btn {
+        .btn-add-item {
             background-color: #007bff;
             color: white;
             border: none;
@@ -58,7 +58,7 @@
             font-weight: bold;
         }
 
-        .add-btn:hover {
+        .btn-add-item:hover {
             background-color: #0056b3;
         }
     </style>
@@ -87,7 +87,7 @@
                                 R$ {{ "%.2f"|format(tam.preco) }}
                             </span>
                         </div>
-                        <button class="add-btn" data-prato-id="{{ item.id }}"
+                        <button class="btn-add-item" data-prato-id="{{ item.id }}"
                             data-prato-nome="{{ item.prato.nome_prato }}" data-tamanho-id="{{ tam.id }}"
                             data-tamanho-nome="{{ tam.nome }}" data-preco="{{ tam.preco }}">
                             +

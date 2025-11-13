@@ -1,6 +1,6 @@
 # ... (import os, from flask import Flask, etc.)
 # Adicione estas 3 novas importações:
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for, jsonify
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -369,6 +369,71 @@ def add_tamanho():
 
         # Redireciona o usuário de volta para a página /admin
         return redirect(url_for('admin'))
+
+# --- ROTA DA API PARA RECEBER O PEDIDO ---
+
+@app.route('/api/finalizar_pedido', methods=['POST'])
+def api_finalizar_pedido():
+    # Esta rota só aceita dados JSON via POST
+    if not request.is_json:
+        return jsonify({"success": False, "message": "Erro: Formato inválido, esperado JSON."}), 400
+
+    data = request.get_json()
+
+    # --- Validação Simples (podemos melhorar depois) ---
+    if 'pedido' not in data or 'carrinho' not in data:
+        return jsonify({"success": False, "message": "Dados incompletos."}), 400
+    if len(data['carrinho']) == 0:
+        return jsonify({"success": False, "message": "O carrinho está vazio."}), 400
+
+    dados_pedido = data['pedido']
+    itens_carrinho = data['carrinho']
+
+    try:
+        # --- 1. Salva o Pedido Principal ---
+        novo_pedido = Pedido(
+            nome_cliente=dados_pedido['nome_cliente'],
+            telefone_cliente=dados_pedido['telefone_cliente'],
+            tipo_pedido=dados_pedido['tipo_pedido'],
+            endereco_cliente=dados_pedido.get('endereco_cliente'), # .get() é seguro se o campo não existir
+            status_pedido='PENDENTE'
+        )
+        db.session.add(novo_pedido)
+        
+        # 'flush' nos dá o ID do novo_pedido antes de salvar permanentemente
+        # Isso é crucial para ligar os itens ao pedido.
+        db.session.flush() 
+        pedido_id = novo_pedido.id
+
+        # --- 2. Salva os Itens do Pedido ---
+        for item in itens_carrinho:
+            novo_item_pedido = ItemPedido(
+                pedido_id=pedido_id,
+                cardapio_id=int(item['pratoId']),
+                tamanho_id=int(item['tamanhoId']),
+                quantidade=int(item['quantidade']),
+                preco_unitario_pago=float(item['preco'])
+            )
+            db.session.add(novo_item_pedido)
+        
+        # --- 3. Salva Tudo Permanentemente ---
+        db.session.commit()
+        
+        # (Futuramente, aqui será o local do código de IMPRESSÃO)
+        print(f"Pedido #{pedido_id} salvo com sucesso!")
+
+        # --- 4. Responde ao JavaScript ---
+        return jsonify({
+            "success": True, 
+            "message": f"Pedido #{pedido_id} recebido! Logo sairá para preparo.",
+            "pedido_id": pedido_id
+        })
+
+    except Exception as e:
+        # Se algo der errado, desfaz tudo (rollback)
+        db.session.rollback()
+        print(f"Erro ao salvar pedido: {e}")
+        return jsonify({"success": False, "message": f"Erro interno ao processar o pedido: {e}"}), 500
 
 # --- Comando para RODAR o servidor ---
 

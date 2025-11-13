@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. Selecionando os Elementos ---
     // Pega todos os botões de "Adicionar"
-    const addButtons = document.querySelectorAll('.add-btn');
+    const addButtons = document.querySelectorAll('.btn-add-item');
 
     // Pega a div onde os itens do carrinho vão aparecer
     const cartList = document.getElementById('lista-carrinho');
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const itemElement = document.createElement('div');
             itemElement.classList.add('carrinho-item');
-            
+
             // ATUALIZADO: Agora com o botão [-]
             itemElement.innerHTML = `
                 <strong>${item.pratoNome}</strong> (${item.tamanhoNome})
@@ -131,13 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // "Ouvinte" principal para os botões [X] e [-]
     cartList.addEventListener('click', (event) => {
         event.preventDefault(); // Impede o link <a> de pular a página
-        
+
         // Se clicou no [X]
         if (event.target.classList.contains('remove-btn')) {
             const indexToRemove = parseInt(event.target.dataset.index, 10);
             removeFromCart(indexToRemove);
         }
-        
+
         // NOVO: Se clicou no [-]
         if (event.target.classList.contains('decrement-btn')) {
             const indexToDecrement = parseInt(event.target.dataset.index, 10);
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function decrementItem(index) {
         let item = cart[index];
-        
+
         if (item.quantidade > 1) {
             // Se a quantidade é > 1, apenas diminui
             item.quantidade--;
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 6. Lógica Limpar Carrinho ---
-    
+
     // NOVO: Ouvinte para o botão "Limpar Carrinho"
     clearCartBtn.addEventListener('click', () => {
         // Pede confirmação, pois é uma ação destrutiva
@@ -193,4 +193,76 @@ document.addEventListener('DOMContentLoaded', () => {
         // "Redesenha" o carrinho com o item a menos
         renderCart();
     }
+
+    // --- 8. Lógica Finalizar Pedido ---
+
+    // Seleciona o formulário e o botão
+    const formPedido = document.getElementById('form-pedido');
+    const btnFinalizar = document.getElementById('btn-finalizar');
+
+    // "Ouve" o evento de SUBMIT (envio) do formulário
+    formPedido.addEventListener('submit', (event) => {
+
+        // 1. Impede o formulário de recarregar a página (comportamento padrão)
+        event.preventDefault();
+
+        // 2. Verifica se o carrinho não está vazio
+        if (cart.length === 0) {
+            alert('Seu carrinho está vazio. Adicione pelo menos um item.');
+            return;
+        }
+
+        // 3. Trava o botão para evitar cliques duplos
+        btnFinalizar.disabled = true;
+        btnFinalizar.textContent = 'Enviando...';
+
+        // 4. Junta todos os dados para enviar
+
+        // Pega os dados do formulário (Nome, Telefone, etc.)
+        const formData = new FormData(formPedido);
+        const dadosPedido = Object.fromEntries(formData.entries());
+
+        // Pega os dados do carrinho (o array 'cart')
+        const dadosCarrinho = cart;
+
+        // Cria o "pacote" de dados (Payload)
+        const payload = {
+            pedido: dadosPedido,
+            carrinho: dadosCarrinho
+        };
+
+        // 5. Envia os dados para o Backend (Python)
+        fetch('/api/finalizar_pedido', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json', // Avisa que estamos enviando JSON
+            },
+            body: JSON.stringify(payload), // Converte nosso objeto JS em texto JSON
+        })
+            .then(response => response.json()) // Converte a resposta do Python de volta para JS
+            .then(data => {
+                // 6. Processa a resposta do Backend
+                if (data.success) {
+                    // SUCESSO!
+                    alert(data.message); // Mostra a mensagem "Pedido #123 recebido!"
+                    cart = []; // Esvazia o carrinho
+                    renderCart(); // Atualiza a tela do carrinho (para "vazio")
+                    formPedido.reset(); // Limpa o formulário (nome, telefone, etc.)
+                } else {
+                    // ERRO!
+                    alert('Erro ao finalizar pedido: ' + data.message);
+                }
+
+                // 7. Libera o botão novamente
+                btnFinalizar.disabled = false;
+                btnFinalizar.textContent = 'Finalizar Pedido';
+            })
+            .catch(error => {
+                // Erro de rede (ex: servidor caiu)
+                console.error('Erro de rede:', error);
+                alert('Não foi possível conectar ao servidor. Tente novamente.');
+                btnFinalizar.disabled = false;
+                btnFinalizar.textContent = 'Finalizar Pedido';
+            });
+    });
 });
