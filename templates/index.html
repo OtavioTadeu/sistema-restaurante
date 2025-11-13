@@ -7,64 +7,9 @@
     <title>Faça seu Pedido</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
-
-    <style>
-        .container {
-            max-width: 1000px;
-            /* Mais largo para o carrinho */
-            display: flex;
-            /* Divide a tela em duas colunas */
-            gap: 20px;
-        }
-
-        .cardapio-coluna {
-            flex: 2;
-        }
-
-        /* Coluna do cardápio (ocupa 2/3) */
-        .carrinho-coluna {
-            flex: 1;
-            /* Coluna do carrinho (ocupa 1/3) */
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            /* Faz o carrinho "flutuar" - opcional */
-            position: sticky;
-            top: 20px;
-            align-self: flex-start;
-        }
-
-        .carrinho-item {
-            border-bottom: 1px dashed #ccc;
-            padding: 10px 0;
-            font-size: 0.9em;
-        }
-
-        .carrinho-total {
-            font-size: 1.2em;
-            font-weight: bold;
-            text-align: right;
-            margin-top: 15px;
-        }
-
-        .btn-add-item {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .btn-add-item:hover {
-            background-color: #0056b3;
-        }
-    </style>
 </head>
 
-<body>
+<body class="client-page">
     <div class="container">
 
         <div class="cardapio-coluna">
@@ -101,7 +46,6 @@
             </div>
         </div>
 
-        -->
         <div class="carrinho-coluna">
             <h2>🛒 Meu Pedido</h2>
 
@@ -113,21 +57,20 @@
                 <span>Total:</span>
                 <span id="total-carrinho">R$ 0.00</span>
             </div>
-            <button type="button" id="clear-cart-btn"
-                style="width: 100%; padding: 5px; margin-top: 10px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+
+            <button type="button" id="clear-cart-btn">
                 Limpar Carrinho
             </button>
-            <div id="checkout-form" style="margin-top: 20px;">
+
+            <div id="checkout-form">
                 <form id="form-pedido">
                     <h3>Seus Dados</h3>
 
                     <label for="nome_cliente">Nome Completo:</label>
-                    <input type="text" id="nome_cliente" name="nome_cliente" required
-                        style="width: 95%; padding: 8px; margin-bottom: 10px;">
+                    <input type="text" id="nome_cliente" name="nome_cliente" required>
 
                     <label for="telefone_cliente">Telefone (para contato/entrega):</label>
-                    <input type="tel" id="telefone_cliente" name="telefone_cliente" required
-                        style="width: 95%; padding: 8px; margin-bottom: 10px;">
+                    <input type="tel" id="telefone_cliente" name="telefone_cliente" required>
 
                     <label>Tipo de Pedido:</label>
                     <div style="margin-bottom: 10px;">
@@ -140,19 +83,17 @@
 
                     <div id="campo_endereco" style="display: none;">
                         <label for="endereco_cliente">Endereço de Entrega:</label>
-                        <input type="text" id="endereco_cliente" name="endereco_cliente"
-                            style="width: 95%; padding: 8px; margin-bottom: 10px;">
+                        <input type="text" id="endereco_cliente" name="endereco_cliente">
                     </div>
 
-                    <button type="submit" id="btn-finalizar" style="width: 100%; padding: 10px 15px; font-size: 1.1em;"
-                        class="add-btn">
+                    <button type="submit" id="btn-finalizar" class="btn-submit">
                         Finalizar Pedido
                     </button>
                 </form>
             </div>
         </div>
 
-    </div> -->
+    </div>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 

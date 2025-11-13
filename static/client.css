@@ -1,36 +1,75 @@
-/* Sobrescreve o container para ficar mais largo */
-.container {
-    max-width: 800px;
+/* --- Variáveis de Cor (Baseado no Logo) --- */
+:root {
+    --cor-fundo: #1a1a1a;
+    --cor-caixa: #2c2c2c;
+    --cor-dourado: #FFC107;
+    --cor-texto: #FFFFFF;
+    --cor-texto-secundario: #aaa;
+    --cor-perigo: #dc3545;
 }
 
+/* --- Tema Escuro Base --- */
+.client-page {
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    /* Usa a fonte base do admin */
+    font-family: sans-serif;
+}
+
+/* --- Layout (Estilos que movemos do index.html) --- */
+.client-page .container {
+    max-width: 1000px;
+    display: flex;
+    gap: 20px;
+    margin: 20px auto;
+    /* Adiciona margem */
+}
+
+.cardapio-coluna {
+    flex: 2;
+}
+
+.carrinho-coluna {
+    flex: 1;
+    border: 1px solid #444;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: var(--cor-caixa);
+    position: sticky;
+    top: 20px;
+    align-self: flex-start;
+}
+
+/* --- Componentes do Cardápio --- */
 .prato {
-    border: 1px solid #ddd;
+    border: 1px solid #444;
     border-radius: 5px;
     padding: 15px;
     margin-bottom: 15px;
-    background-color: #f9f9f9;
+    background-color: var(--cor-caixa);
 }
 
 .prato h2 {
     margin-top: 0;
-    color: #333;
+    color: var(--cor-dourado);
 }
 
 .prato .descricao {
     font-size: 0.9em;
-    color: #555;
+    color: var(--cor-texto-secundario);
     margin-bottom: 15px;
 }
 
 .tamanho-opcao {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 10px;
-    border-top: 1px dashed #ccc;
+    border-top: 1px dashed #444;
 }
 
 .tamanho-opcao:first-of-type {
-    border-top: 1px solid #ccc;
+    border-top: 1px solid #444;
 }
 
 .tamanho-nome {
@@ -39,5 +78,120 @@
 
 .tamanho-preco {
     font-weight: bold;
-    color: #007bff;
+    color: var(--cor-dourado);
+}
+
+/* --- Componentes do Carrinho --- */
+.cardapio-coluna h1,
+.carrinho-coluna h1,
+.carrinho-coluna h2,
+.carrinho-coluna h3 {
+    color: var(--cor-dourado);
+}
+
+.carrinho-item {
+    border-bottom: 1px dashed #444;
+    padding: 10px 0;
+    font-size: 0.9em;
+}
+
+.carrinho-total {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: right;
+    margin-top: 15px;
+}
+
+/* --- Estilos dos Botões --- */
+
+/* Botão [+] de Adicionar */
+.btn-add-item {
+    background-color: var(--cor-dourado);
+    color: #000;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-add-item:hover {
+    background-color: #ffda6a;
+}
+
+/* Botão [Limpar Carrinho] - Estilo "Fantasma" */
+#clear-cart-btn {
+    width: 100%;
+    padding: 8px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    /* Adiciona espaço extra */
+
+    background-color: transparent;
+    /* Fundo transparente */
+    color: var(--cor-perigo);
+    /* Texto vermelho */
+    border: 1px solid var(--cor-perigo);
+    /* Borda vermelha */
+
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+}
+
+#clear-cart-btn:hover {
+    background-color: var(--cor-perigo);
+    color: white;
+}
+
+/* Botão [Finalizar Pedido] (nova classe .btn-submit) */
+.btn-submit {
+    width: 100%;
+    padding: 10px 15px;
+    font-size: 1.1em;
+    background-color: var(--cor-dourado);
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-submit:hover {
+    background-color: #ffda6a;
+}
+
+.btn-submit:disabled {
+    background-color: #555;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+/* --- Estilos do Formulário (para o tema escuro) --- */
+.carrinho-coluna input[type="text"],
+.carrinho-coluna input[type="tel"] {
+    width: 95%;
+    padding: 8px;
+    margin-bottom: 10px;
+    background-color: #333;
+    border: 1px solid #555;
+    color: var(--cor-texto);
+    border-radius: 5px;
+}
+
+.carrinho-coluna label {
+    margin-bottom: 5px;
+    display: inline-block;
+}
+
+.carrinho-coluna #checkout-form {
+    background-color: #333;
+    /* Fundo do formulário */
+    border: 1px solid #555;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 20px;
 }
