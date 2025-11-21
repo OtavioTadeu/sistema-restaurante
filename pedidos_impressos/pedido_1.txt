@@ -1,0 +1,18 @@
+DOGAO DO CASTELO
+--------------------------------
+PEDIDO #1
+Cliente: Otávio Tadeu Magalhães Ferreira
+Telefone: 3199493929
+
+>>> PARA ENTREGA <<<
+Rua Cidade de Minas 199
+--------------------------------
+QTD  ITEM (TAM)               VALOR
+3x Frango à Parmegiana (R$ 57.00
+--------------------------------
+                 TOTAL: R$ 57.00
+
+21/11/2025 21:41:53
+
+
+
