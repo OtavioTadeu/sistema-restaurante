@@ -26,3 +26,38 @@ O sistema opera com uma arquitetura de **Fila de Impressão**, garantindo robust
 ---
 
 ## 🛠️ Tecnologias
+
+* **Backend:** Python 3, Flask, SQLAlchemy (SQLite)
+* **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
+* **Automação:** Script Python nativo com `win32print` para integração direta com o Windows.
+
+---
+
+## 🚀 Guia de Instalação e Execução
+
+Siga estes passos para rodar o sistema no computador da loja.
+
+### Pré-requisitos
+* Python 3 instalado (com a opção "Add to PATH" marcada).
+* Impressora térmica instalada e definida como **Impressora Padrão** do Windows.
+
+### Passo 1: Configuração Inicial
+1.  Clone este repositório ou baixe os arquivos.
+2.  Abra o terminal na pasta do projeto.
+3.  Crie e ative o ambiente virtual:
+    ```bash
+    py -m venv venv
+    .\venv\Scripts\activate
+    ```
+4.  Instale as dependências:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+### Passo 2: Rodar o Sistema
+Você precisará de dois terminais (janelas do Prompt de Comando) abertos simultaneamente:
+
+**Terminal 1 (O Site):**
+```bash
+.\venv\Scripts\activate
+py app.py
