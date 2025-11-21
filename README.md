@@ -1,43 +1,28 @@
-# 🍽️ Sistema de Pedidos para Restaurante
+# 🌭 Sistema de Pedidos - Dogão do Castelo
 
-Este é um sistema de gestão de pedidos (POS) desenvolvido em Python e Flask, focado em pequenos restaurantes que trabalham com o modelo de "Prato do Dia". O projeto foi criado para automatizar a operação de um restaurante familiar, permitindo o cadastro de um cardápio dinâmico e o envio de pedidos para a cozinha.
-
----
-
-## ✨ Funcionalidades Atuais
-
-O sistema é dividido em duas partes principais:
-
-### 1. Painel de Admin (`/admin`)
-Uma interface de gerenciamento onde o dono do restaurante pode:
-* **Gerenciar Tamanhos:** CRUD (Criar, Ler, Editar, Excluir) para os tamanhos dos pratos (ex: Pequeno, Grande) e seus preços fixos.
-* **Gerenciar Catálogo de Pratos:** CRUD completo para todos os pratos que o restaurante sabe fazer.
-* **Montar o Cardápio do Dia:** A função principal. Permite selecionar pratos do catálogo para compor o cardápio de hoje.
-* **Controle de Disponibilidade:** Marcar itens do cardápio do dia como "Disponível" ou "Esgotado" em tempo real.
-* **Limpar Cardápio:** Um botão para apagar todos os itens do cardápio do dia, facilitando o início de um novo dia.
-
-### 2. Interface do Cliente (`/`)
-A tela principal de pedidos com design responsivo (dark mode) para o cliente:
-* **Cardápio Dinâmico:** Exibe apenas os itens marcados como "Disponíveis" pelo admin.
-* **Carrinho de Compras:** Um carrinho 100% em JavaScript que permite adicionar, remover (unitário ou completo) e limpar itens.
-* **Formulário de Checkout:** Coleta os dados do cliente (Nome, Telefone) e se adapta para pedidos de "Entrega" (mostrando o campo de endereço) ou "Retirada".
-* **API de Pedidos:** Envia o pedido completo (carrinho + dados do cliente) para o backend Flask, que salva tudo no banco de dados.
+Sistema de gestão de pedidos (POS) e cardápio digital desenvolvido sob medida para a lanchonete **Dogão do Castelo**. O projeto moderniza o atendimento, permitindo pedidos via interface web e automação da impressão de comandas na cozinha.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## ✨ Funcionalidades (Versão 1.0)
 
-* **Backend:** Python
-* **Framework Web:** Flask
-* **Banco de Dados:** SQLite
-* **ORM:** Flask-SQLAlchemy (para interagir com o banco de dados)
-* **Frontend:** HTML5, CSS3, JavaScript (Vanilla) e Templates com Jinja2
+O sistema opera com uma arquitetura de **Fila de Impressão**, garantindo robustez mesmo se a impressora falhar ou estiver sem papel.
+
+### 1. Interface do Cliente (Cardápio Digital)
+* **Design Personalizado:** Tema "Dark Mode" com as cores da marca (Preto e Dourado).
+* **Cardápio Dinâmico:** Exibe apenas os itens disponíveis no dia.
+* **Carrinho Interativo:** Adicionar, remover e ajustar quantidades com atualização de preço em tempo real.
+* **Checkout Inteligente:** Formulário que se adapta para "Retirada" ou "Entrega".
+
+### 2. Painel Administrativo (`/admin`)
+* **Gestão Total:** Adicionar/Editar/Remover pratos e tamanhos de preços.
+* **Controle Diário:** Montar o "Cardápio do Dia" e marcar itens como esgotados em tempo real.
+* **Painel de Pedidos:** Visualização dos pedidos recebidos.
+
+### 3. Sistema de Impressão (Backend)
+* **Fila de Arquivos:** O sistema salva os pedidos como arquivos `.txt` numa pasta segura.
+* **Script Vigia (`impressor.py`):** Um robô que monitora a pasta e envia automaticamente novos pedidos para a impressora padrão do Windows, movendo-os para "Concluídos" após o sucesso.
 
 ---
 
-## 🚀 Próximos Passos (Roadmap)
-
-* [ ] **Impressão de Comandas:** Integrar o backend com uma impressora térmica USB (usando `python-escpos`) para imprimir o pedido automaticamente.
-* [ ] **Migrações de Banco:** Implementar o `Flask-Migrate` para gerenciar alterações no banco de dados de forma segura.
-* [ ] **Autenticação:** Adicionar um sistema de login e senha para o `/admin`.
-* [ ] **Refinamento de Design:** Melhorar o CSS do painel de admin.
+## 🛠️ Tecnologias
