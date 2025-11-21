@@ -1,9 +1,7 @@
 import os
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-
-# --- Configuração Inicial ---
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -13,8 +11,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 're
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
-
-# --- Definição das Tabelas (Modelos) ---
 
 class Tamanho(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -58,8 +54,6 @@ class ItemPedido(db.Model):
     cardapio = db.relationship('CardapioDoDia')
     tamanho = db.relationship('Tamanho')
 
-# --- ROTAS DE ADMINISTRAÇÃO ---
-
 @app.route('/admin')
 def admin():
     try:
@@ -85,8 +79,6 @@ def admin_cardapio():
         pratos_catalogo = []
         cardapio_hoje = []
     return render_template('admin_cardapio.html', pratos_catalogo=pratos_catalogo, cardapio_hoje=cardapio_hoje)
-
-# --- Rotas de Ação do Admin (Adicionar/Remover/Editar) ---
 
 @app.route('/admin/add_tamanho', methods=['POST'])
 def add_tamanho():
@@ -207,8 +199,6 @@ def clear_cardapio():
         db.session.rollback()
     return redirect(url_for('admin_cardapio'))
 
-# --- ROTA DA LOJA (CLIENTE) ---
-
 @app.route('/')
 def home():
     try:
@@ -219,14 +209,8 @@ def home():
         tamanhos = []
     return render_template('index.html', cardapio_hoje=cardapio_hoje, tamanhos=tamanhos)
 
-# --- FUNÇÃO HELPER: SALVAR ARQUIVO (FILA DE IMPRESSÃO) ---
-
 def salvar_arquivo_cupom(pedido, itens):
-    """
-    Gera o texto do cupom e salva num arquivo .txt na pasta 'fila_impressao'.
-    """
     try:
-        # Cria a pasta se não existir
         pasta_fila = os.path.join(basedir, 'fila_impressao')
         if not os.path.exists(pasta_fila):
             os.makedirs(pasta_fila)
@@ -235,7 +219,6 @@ def salvar_arquivo_cupom(pedido, itens):
         caminho_completo = os.path.join(pasta_fila, nome_arquivo)
 
         with open(caminho_completo, 'w', encoding='utf-8') as f:
-            # --- Cabeçalho ---
             f.write("DOGAO DO CASTELO\n")
             f.write("-" * 32 + "\n")
             f.write(f"PEDIDO #{pedido.id}\n")
@@ -252,7 +235,6 @@ def salvar_arquivo_cupom(pedido, itens):
             f.write("-" * 32 + "\n")
             f.write("QTD  ITEM (TAM)               VALOR\n")
 
-            # --- Itens ---
             total_pedido = 0
             for item in itens:
                 nome_prato = item['pratoNome']
@@ -262,15 +244,12 @@ def salvar_arquivo_cupom(pedido, itens):
                 preco_total_item = qtd * preco_unit
                 total_pedido += preco_total_item
 
-                # Formata a linha
                 linha_item = f"{qtd}x {nome_prato} ({nome_tamanho})"
                 linha_preco = f"R$ {preco_total_item:.2f}"
 
-                # Trunca se for muito longo
                 if len(linha_item) > 24:
                     linha_item = linha_item[:24]
 
-                # Calcula espaços para alinhar à direita
                 espacos = 32 - len(linha_item) - len(linha_preco)
                 if espacos < 0: espacos = 0
 
@@ -278,21 +257,18 @@ def salvar_arquivo_cupom(pedido, itens):
 
             f.write("-" * 32 + "\n")
             
-            # --- Total e Rodapé ---
             texto_total = f"TOTAL: R$ {total_pedido:.2f}"
             espacos_total = 32 - len(texto_total)
             f.write((" " * espacos_total) + texto_total + "\n")
             
             f.write("\n")
             f.write(f"{pedido.data_hora.strftime('%d/%m/%Y %H:%M:%S')}\n")
-            f.write("\n\n\n") # Espaço extra para o corte
+            f.write("\n\n\n")
 
-        print(f"--- SUCESSO: Arquivo {nome_arquivo} salvo na fila de impressão.")
+        print(f"--- SUCESSO: Arquivo {nome_arquivo} salvo na fila.")
 
     except Exception as e:
         print(f"!!! ERRO AO SALVAR ARQUIVO DE IMPRESSÃO: {e}")
-
-# --- ROTA DA API (RECEBE O PEDIDO) ---
 
 @app.route('/api/finalizar_pedido', methods=['POST'])
 def api_finalizar_pedido():
@@ -307,7 +283,6 @@ def api_finalizar_pedido():
         return jsonify({"success": False, "message": "Dados incompletos."}), 400
 
     try:
-        # 1. Salva o Pedido
         novo_pedido = Pedido(
             nome_cliente=dados_pedido['nome_cliente'],
             telefone_cliente=dados_pedido['telefone_cliente'],
@@ -316,9 +291,8 @@ def api_finalizar_pedido():
             status_pedido='PENDENTE'
         )
         db.session.add(novo_pedido)
-        db.session.flush() # Garante o ID
+        db.session.flush()
 
-        # 2. Salva os Itens
         for item in itens_carrinho:
             novo_item = ItemPedido(
                 pedido_id=novo_pedido.id,
@@ -331,12 +305,11 @@ def api_finalizar_pedido():
         
         db.session.commit()
         
-        # 3. GERA O ARQUIVO PARA A FILA DE IMPRESSÃO
         salvar_arquivo_cupom(novo_pedido, itens_carrinho)
 
         return jsonify({
             "success": True, 
-            "message": f"Pedido #{novo_pedido.id} recebido!",
+            "message": "Pedido recebido com sucesso!",
             "pedido_id": novo_pedido.id
         })
 

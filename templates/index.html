@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faça seu Pedido</title>
+    <title>Faça seu Pedido - Dogão do Castelo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
 </head>
@@ -57,11 +57,11 @@
                 <span>Total:</span>
                 <span id="total-carrinho">R$ 0.00</span>
             </div>
-
+            
             <button type="button" id="clear-cart-btn">
                 Limpar Carrinho
             </button>
-
+            
             <div id="checkout-form">
                 <form id="form-pedido">
                     <h3>Seus Dados</h3>
@@ -94,7 +94,7 @@
         </div>
 
     </div>
+    
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
-
 </html>

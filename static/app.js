@@ -1,72 +1,48 @@
-// Espera o HTML inteiro ser carregado antes de rodar o script
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- 1. Selecionando os Elementos ---
-    // Pega todos os botões de "Adicionar"
     const addButtons = document.querySelectorAll('.btn-add-item');
-
-    // Pega a div onde os itens do carrinho vão aparecer
     const cartList = document.getElementById('lista-carrinho');
-
-    // Pega o span onde o total será exibido
     const cartTotalSpan = document.getElementById('total-carrinho');
-
     const clearCartBtn = document.getElementById('clear-cart-btn');
+    
+    const formPedido = document.getElementById('form-pedido');
+    const btnFinalizar = document.getElementById('btn-finalizar');
+    const tipoRetirada = document.getElementById('tipo_retirada');
+    const tipoEntrega = document.getElementById('tipo_entrega');
+    const campoEndereco = document.getElementById('campo_endereco');
 
-    // --- 2. O Carrinho (Onde guardamos os dados) ---
-    // Vamos usar um array para guardar os itens do pedido
     let cart = [];
 
-    // --- 3. A Lógica Principal ---
-
-    // Para cada botão de "Adicionar", vamos "ouvir" um clique
     addButtons.forEach(button => {
         button.addEventListener('click', () => {
-            // Quando o botão é clicado, pegamos os dados dele
-            // (que colocamos nos atributos 'data-...')
             const item = {
                 pratoId: button.dataset.pratoId,
                 pratoNome: button.dataset.pratoNome,
                 tamanhoId: button.dataset.tamanhoId,
                 tamanhoNome: button.dataset.tamanhoNome,
                 preco: parseFloat(button.dataset.preco),
-                quantidade: 1 // Começa com quantidade 1
+                quantidade: 1
             };
-
-            // Adiciona o item ao nosso array 'cart'
             addToCart(item);
         });
     });
 
-    /**
-     * Adiciona um item ao carrinho ou incrementa a quantidade
-     */
     function addToCart(newItem) {
-        // Verifica se o item (mesmo prato, mesmo tamanho) JÁ ESTÁ no carrinho
         let itemExists = false;
         for (let item of cart) {
             if (item.pratoId === newItem.pratoId && item.tamanhoId === newItem.tamanhoId) {
-                // Se sim, apenas aumenta a quantidade
                 item.quantidade++;
                 itemExists = true;
                 break;
             }
         }
-
-        // Se não existe, adiciona o novo item ao array
         if (!itemExists) {
             cart.push(newItem);
         }
-
-        // Atualiza a tela do carrinho
         renderCart();
     }
 
-    /**
-     * "Desenha" o carrinho na tela e calcula o total
-     */
     function renderCart() {
-        // ... (o início é o mesmo) ...
         cartList.innerHTML = '';
         if (cart.length === 0) {
             cartList.innerHTML = '<p style="color: #777;">Seu carrinho está vazio.</p>';
@@ -82,24 +58,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemElement = document.createElement('div');
             itemElement.classList.add('carrinho-item');
 
-            // ATUALIZADO: Agora com o botão [-]
             itemElement.innerHTML = `
                 <strong>${item.pratoNome}</strong> (${item.tamanhoNome})
-                
                 <a href="#" class="remove-btn" data-index="${index}" 
-                   style="color: red; float: right; text-decoration: none;">
+                   style="color: var(--cor-perigo); float: right; text-decoration: none;">
                    [X]
                 </a>
-                
                 <br>
-                
                 <span>Qtd: 
-                    <a href="#" class="decrement-btn" data-index="${index}" style="color: #007bff; text-decoration: none; font-weight: bold;">
+                    <a href="#" class="decrement-btn" data-index="${index}" style="color: var(--cor-dourado); text-decoration: none; font-weight: bold;">
                         [-]
                     </a>
                     ${item.quantidade}
                 </span>
-                
                 <span style="float: right; font-weight: bold; margin-right: 10px;">R$ ${itemTotal.toFixed(2)}</span>
             `;
             cartList.appendChild(itemElement);
@@ -108,161 +79,94 @@ document.addEventListener('DOMContentLoaded', () => {
         cartTotalSpan.textContent = `R$ ${total.toFixed(2)}`;
     }
 
-    // --- 4. Lógica do Formulário de Checkout ---
-
-    // Seleciona os elementos do formulário
-    const tipoRetirada = document.getElementById('tipo_retirada');
-    const tipoEntrega = document.getElementById('tipo_entrega');
-    const campoEndereco = document.getElementById('campo_endereco');
-
-    // "Ouve" por cliques nos botões de rádio
-    tipoRetirada.addEventListener('click', () => {
-        campoEndereco.style.display = 'none'; // Esconde o endereço
-    });
-
-    tipoEntrega.addEventListener('click', () => {
-        campoEndereco.style.display = 'block'; // Mostra o endereço
-    });
-
-    // (O código para ENVIAR o formulário virá no próximo passo)
-
-    // --- 5. Lógica de Modificação do Carrinho ---
-
-    // "Ouvinte" principal para os botões [X] e [-]
     cartList.addEventListener('click', (event) => {
-        event.preventDefault(); // Impede o link <a> de pular a página
+        event.preventDefault(); 
 
-        // Se clicou no [X]
         if (event.target.classList.contains('remove-btn')) {
             const indexToRemove = parseInt(event.target.dataset.index, 10);
             removeFromCart(indexToRemove);
         }
-
-        // NOVO: Se clicou no [-]
+        
         if (event.target.classList.contains('decrement-btn')) {
             const indexToDecrement = parseInt(event.target.dataset.index, 10);
             decrementItem(indexToDecrement);
         }
     });
 
-    /**
-     * Remove um item do array 'cart' usando seu índice
-     */
     function removeFromCart(index) {
         cart.splice(index, 1);
         renderCart();
     }
 
-    /**
-     * NOVO: Diminui a quantidade de um item
-     */
     function decrementItem(index) {
         let item = cart[index];
-
         if (item.quantidade > 1) {
-            // Se a quantidade é > 1, apenas diminui
             item.quantidade--;
             renderCart();
         } else {
-            // Se a quantidade é 1, remover o item é a mesma coisa
             removeFromCart(index);
         }
     }
 
-    // --- 6. Lógica Limpar Carrinho ---
-
-    // NOVO: Ouvinte para o botão "Limpar Carrinho"
     clearCartBtn.addEventListener('click', () => {
-        // Pede confirmação, pois é uma ação destrutiva
-        if (confirm('Tem certeza que quer esvaziar o carrinho?')) {
-            cart = []; // Esvazia o array
-            renderCart(); // "Redesenha" o carrinho (que mostrará "vazio")
+        if (cart.length > 0 && confirm('Tem certeza que quer esvaziar o carrinho?')) {
+            cart = [];
+            renderCart();
         }
     });
 
-    // --- 7. Lógica do Formulário de Checkout ---
-    // (O código dos botões de rádio "Entrega" e "Retirada" continua aqui)
+    tipoRetirada.addEventListener('click', () => {
+        campoEndereco.style.display = 'none';
+    });
 
-    /**
-     * Remove um item do array 'cart' usando seu índice
-     */
-    function removeFromCart(index) {
-        // 'splice' remove 1 item na posição 'index'
-        cart.splice(index, 1);
+    tipoEntrega.addEventListener('click', () => {
+        campoEndereco.style.display = 'block';
+    });
 
-        // "Redesenha" o carrinho com o item a menos
-        renderCart();
-    }
-
-    // --- 8. Lógica Finalizar Pedido ---
-
-    // Seleciona o formulário e o botão
-    const formPedido = document.getElementById('form-pedido');
-    const btnFinalizar = document.getElementById('btn-finalizar');
-
-    // "Ouve" o evento de SUBMIT (envio) do formulário
     formPedido.addEventListener('submit', (event) => {
-
-        // 1. Impede o formulário de recarregar a página (comportamento padrão)
-        event.preventDefault();
-
-        // 2. Verifica se o carrinho não está vazio
+        event.preventDefault(); 
+        
         if (cart.length === 0) {
             alert('Seu carrinho está vazio. Adicione pelo menos um item.');
             return;
         }
 
-        // 3. Trava o botão para evitar cliques duplos
         btnFinalizar.disabled = true;
         btnFinalizar.textContent = 'Enviando...';
 
-        // 4. Junta todos os dados para enviar
-
-        // Pega os dados do formulário (Nome, Telefone, etc.)
         const formData = new FormData(formPedido);
         const dadosPedido = Object.fromEntries(formData.entries());
-
-        // Pega os dados do carrinho (o array 'cart')
-        const dadosCarrinho = cart;
-
-        // Cria o "pacote" de dados (Payload)
+        
         const payload = {
             pedido: dadosPedido,
-            carrinho: dadosCarrinho
+            carrinho: cart
         };
 
-        // 5. Envia os dados para o Backend (Python)
         fetch('/api/finalizar_pedido', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json', // Avisa que estamos enviando JSON
-            },
-            body: JSON.stringify(payload), // Converte nosso objeto JS em texto JSON
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
         })
-            .then(response => response.json()) // Converte a resposta do Python de volta para JS
-            .then(data => {
-                // 6. Processa a resposta do Backend
-                if (data.success) {
-                    // SUCESSO!
-                    alert(data.message); // Mostra a mensagem "Pedido #123 recebido!"
-                    cart = []; // Esvazia o carrinho
-                    renderCart(); // Atualiza a tela do carrinho (para "vazio")
-                    formPedido.reset(); // Limpa o formulário (nome, telefone, etc.)
-                } else {
-                    // ERRO!
-                    alert('Erro ao finalizar pedido: ' + data.message);
-                }
-
-                // 7. Libera o botão novamente
-                btnFinalizar.disabled = false;
-                btnFinalizar.textContent = 'Finalizar Pedido';
-            })
-            .catch(error => {
-                // Erro de rede (ex: servidor caiu)
-                console.error('Erro de rede:', error);
-                alert('Não foi possível conectar ao servidor. Tente novamente.');
-                btnFinalizar.disabled = false;
-                btnFinalizar.textContent = 'Finalizar Pedido';
-            });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                cart = [];
+                renderCart();
+                formPedido.reset();
+                campoEndereco.style.display = 'none';
+                document.getElementById('tipo_retirada').checked = true;
+            } else {
+                alert('Erro ao finalizar pedido: ' + data.message);
+            }
+            btnFinalizar.disabled = false;
+            btnFinalizar.textContent = 'Finalizar Pedido';
+        })
+        .catch(error => {
+            console.error('Erro de rede:', error);
+            alert('Não foi possível conectar ao servidor. Tente novamente.');
+            btnFinalizar.disabled = false;
+            btnFinalizar.textContent = 'Finalizar Pedido';
+        });
     });
 });
