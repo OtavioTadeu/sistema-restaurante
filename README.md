@@ -61,3 +61,7 @@ Você precisará de dois terminais (janelas do Prompt de Comando) abertos simult
 ```bash
 .\venv\Scripts\activate
 py app.py
+
+**Terminal 2 (O Robô de Impressão):**
+.\venv\Scripts\activate
+py impressor.py
