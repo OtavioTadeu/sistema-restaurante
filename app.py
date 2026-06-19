@@ -269,10 +269,25 @@ def clear_cardapio():
 @login_required
 def admin_pedidos():
     try:
-        pedidos = Pedido.query.order_by(Pedido.data_hora.desc()).all()
-    except:
+        data_filtro_str = request.args.get('data')
+        if data_filtro_str:
+            data_filtro = datetime.strptime(data_filtro_str, '%Y-%m-%d').date()
+        else:
+            data_filtro = datetime.today().date()
+            
+        start_of_day = datetime.combine(data_filtro, datetime.min.time())
+        end_of_day = datetime.combine(data_filtro, datetime.max.time())
+        
+        pedidos = Pedido.query.filter(
+            Pedido.data_hora >= start_of_day,
+            Pedido.data_hora <= end_of_day
+        ).order_by(Pedido.data_hora.desc()).all()
+        
+        data_filtro_str_formatada = data_filtro.strftime('%Y-%m-%d')
+    except Exception as e:
         pedidos = []
-    return render_template('admin_pedidos.html', pedidos=pedidos)
+        data_filtro_str_formatada = ""
+    return render_template('admin_pedidos.html', pedidos=pedidos, data_filtro=data_filtro_str_formatada)
 
 @app.route('/admin/atualizar_pedido/<int:pedido_id>', methods=['POST'])
 @login_required

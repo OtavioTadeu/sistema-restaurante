@@ -25,7 +25,15 @@
             </header>
             
             <section class="card">
-                <h2>Pedidos Recentes</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                    <h2 style="margin: 0;">Pedidos</h2>
+                    <form action="{{ url_for('admin_pedidos') }}" method="GET" style="display: flex; gap: 10px; margin: 0; align-items: center;">
+                        <label for="data" style="margin: 0; font-weight: 600;">Data:</label>
+                        <input type="date" id="data" name="data" value="{{ data_filtro }}" style="padding: 6px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff;">
+                        <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                        <a href="{{ url_for('admin_pedidos') }}" class="btn btn-secondary btn-sm">Hoje</a>
+                    </form>
+                </div>
                 <div class="table-responsive">
                     <table class="admin-table">
                         <thead>
