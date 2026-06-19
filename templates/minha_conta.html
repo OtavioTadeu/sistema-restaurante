@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Conta - Dogão do Castelo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
+</head>
+<body class="client-page">
+    <header class="client-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; text-align: left;">
+        <div class="logo">
+            <h1>Dogão do Castelo</h1>
+            <p>Sua área exclusiva</p>
+        </div>
+        <div class="user-nav" style="display: flex; gap: 15px; align-items: center;">
+            <a href="{{ url_for('home') }}" class="btn-secondary" style="text-decoration: none; padding: 8px 15px;">Fazer Pedido</a>
+            <a href="{{ url_for('cliente_logout') }}" class="btn-text-danger" style="text-decoration: none; width: auto;">Sair</a>
+        </div>
+    </header>
+
+    <main class="container" style="max-width: 900px; padding: 20px; margin: 0 auto;">
+        <h2 style="color: var(--primary); margin-bottom: 20px;">Olá, {{ cliente.nome }}! 👋</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}" style="color: var(--success); padding: 15px; border: 1px solid var(--success); background: rgba(0, 200, 83, 0.1); border-radius: 8px; margin-bottom: 20px;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+            <!-- Painel de Dados -->
+            <div class="card" style="padding: 20px; align-self: start;">
+                <h3 style="margin-top: 0; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Meus Dados Pessoais</h3>
+                
+                <form action="{{ url_for('minha_conta') }}" method="POST" class="modern-form">
+                    <div class="form-group">
+                        <label>Nome:</label>
+                        <input type="text" name="nome" value="{{ cliente.nome }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>WhatsApp:</label>
+                        <input type="tel" name="telefone" value="{{ cliente.telefone }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Endereço de Entrega Padrão:</label>
+                        <input type="text" name="endereco_padrao" value="{{ cliente.endereco_padrao or '' }}" placeholder="Ex: Rua X, 123">
+                    </div>
+                    <div class="form-group">
+                        <label>Preferência para próximos pedidos:</label>
+                        <select name="preferencia_entrega" class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #121212; color: #fff; margin-bottom: 15px;">
+                            <option value="RETIRADA" {% if cliente.preferencia_entrega == 'RETIRADA' %}selected{% endif %}>Vou Retirar na Loja</option>
+                            <option value="ENTREGA" {% if cliente.preferencia_entrega == 'ENTREGA' %}selected{% endif %}>Entregar no meu Endereço</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary-large" style="padding: 10px;">Salvar Alterações</button>
+                </form>
+            </div>
+
+            <!-- Histórico de Pedidos -->
+            <div class="card" style="padding: 20px;">
+                <h3 style="margin-top: 0; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Meu Histórico de Pedidos</h3>
+                
+                {% if pedidos %}
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        {% for pedido in pedidos %}
+                            <div style="background: #121212; border: 1px solid #333; border-radius: 8px; padding: 15px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #333; padding-bottom: 10px; margin-bottom: 10px;">
+                                    <strong>Pedido #{{ pedido.id }}</strong>
+                                    <span class="badge status-{{ pedido.status_pedido|lower|replace(' ', '-') }}">{{ pedido.status_pedido }}</span>
+                                </div>
+                                <div style="font-size: 0.9em; color: #aaa;">
+                                    <p style="margin: 5px 0;"><strong>Data:</strong> {{ pedido.data_hora.strftime('%d/%m/%Y às %H:%M') }}</p>
+                                    <p style="margin: 5px 0;"><strong>Tipo:</strong> {{ pedido.tipo_pedido }}</p>
+                                    <p style="margin: 5px 0;"><strong>Pagamento:</strong> {{ pedido.forma_pagamento or 'N/A' }}</p>
+                                    
+                                    <div style="margin-top: 10px; border-top: 1px solid #222; padding-top: 10px;">
+                                        {% set ns = namespace(total=0) %}
+                                        {% for item in pedido.itens %}
+                                            {% set subtotal = item.quantidade * item.preco_unitario_pago %}
+                                            <p style="margin: 3px 0; display: flex; justify-content: space-between;">
+                                                <span>{{ item.quantidade }}x {{ item.prato.nome_prato }}</span>
+                                                <span>R$ {{ "%.2f"|format(subtotal) }}</span>
+                                            </p>
+                                            {% set ns.total = ns.total + subtotal %}
+                                        {% endfor %}
+                                        <div style="display: flex; justify-content: space-between; margin-top: 10px; color: var(--primary); font-weight: bold; font-size: 1.1em;">
+                                            <span>Total:</span>
+                                            <span>R$ {{ "%.2f"|format(ns.total) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="color: #aaa; text-align: center; margin-top: 50px;">Você ainda não fez nenhum pedido conosco.<br><br>
+                    <a href="{{ url_for('home') }}" class="btn-primary" style="text-decoration: none; padding: 10px 20px; display: inline-block; margin-top: 15px;">Fazer o Primeiro Pedido</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+    
+    <style>
+        /* Responsive Grid for account */
+        @media(max-width: 768px) {
+            div[style*="grid-template-columns"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        .badge {
+            padding: 5px 10px; border-radius: 20px; font-size: 0.8em; font-weight: bold;
+        }
+        .status-pendente { background: #f5a623; color: #000; }
+        .status-preparando { background: #4a90e2; color: #fff; }
+        .status-entregue { background: #7ed321; color: #000; }
+        .status-cancelado { background: #d0021b; color: #fff; }
+    </style>
+</body>
+</html>

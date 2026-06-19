@@ -139,12 +139,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tipoEntrega.checked) campoEndereco.style.display = 'block';
     });
 
+    const formaPagamento = document.getElementById('forma_pagamento');
+    const campoTroco = document.getElementById('campo_troco');
+    
+    formaPagamento.addEventListener('change', () => {
+        if (formaPagamento.value === 'DINHEIRO') {
+            campoTroco.style.display = 'block';
+        } else {
+            campoTroco.style.display = 'none';
+        }
+    });
+
     function gerarTextoWhatsApp(pedidoId, dados, itens, total) {
         let texto = `*NOVO PEDIDO #${pedidoId}*\n`;
         texto += `*Cliente:* ${dados.nome_cliente}\n`;
         texto += `*Tipo:* ${dados.tipo_pedido}\n`;
         if (dados.tipo_pedido === 'ENTREGA') {
             texto += `*Endereço:* ${dados.endereco_cliente}\n`;
+        }
+        texto += `*Pagamento:* ${dados.forma_pagamento}\n`;
+        if (dados.forma_pagamento === 'DINHEIRO' && dados.troco_para) {
+            texto += `*Troco para:* ${dados.troco_para}\n`;
         }
         texto += `\n*ITENS:*\n`;
         itens.forEach(item => {
@@ -195,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderCart();
                 formPedido.reset();
                 campoEndereco.style.display = 'none';
+                campoTroco.style.display = 'none';
                 document.getElementById('tipo_retirada').checked = true;
             } else {
                 alert('Erro ao finalizar pedido: ' + data.message);

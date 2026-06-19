@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Dogão do Castelo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
+</head>
+<body class="client-page">
+    <header class="client-header">
+        <div class="logo">
+            <h1>Dogão do Castelo</h1>
+            <p>Acesse sua conta</p>
+        </div>
+    </header>
+
+    <main class="auth-container" style="max-width: 400px; margin: 40px auto; padding: 20px;">
+        <div class="card" style="padding: 30px;">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Entrar</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}" style="color: var(--danger); text-align: center; margin-bottom: 15px;">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('cliente_login') }}" method="POST" class="modern-form">
+                <div class="form-group">
+                    <label>WhatsApp (Telefone):</label>
+                    <input type="tel" name="telefone" required placeholder="Ex: 11999999999">
+                </div>
+                <div class="form-group">
+                    <label>Senha:</label>
+                    <input type="password" name="senha" required placeholder="Sua senha secreta">
+                </div>
+                <button type="submit" class="btn-primary-large" style="margin-top: 10px;">Entrar</button>
+            </form>
+            
+            <p style="text-align: center; margin-top: 20px; color: #aaa;">
+                Ainda não tem conta? <a href="{{ url_for('cliente_cadastro') }}" style="color: var(--primary);">Cadastre-se</a>
+            </p>
+            <p style="text-align: center; margin-top: 10px;">
+                <a href="{{ url_for('home') }}" style="color: #666; text-decoration: none;">Voltar ao Cardápio</a>
+            </p>
+        </div>
+    </main>
+</body>
+</html>

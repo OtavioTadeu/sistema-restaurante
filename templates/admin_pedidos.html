@@ -42,6 +42,7 @@
                                 <th>Data</th>
                                 <th>Cliente</th>
                                 <th>Tipo</th>
+                                <th>Pagamento</th>
                                 <th>Total</th>
                                 <th>Status</th>
                                 <th>Ações</th>
@@ -54,6 +55,12 @@
                                 <td>{{ pedido.data_hora.strftime('%d/%m %H:%M') }}</td>
                                 <td><strong>{{ pedido.nome_cliente }}</strong><br><small>{{ pedido.telefone_cliente }}</small></td>
                                 <td><span class="badge badge-secondary">{{ pedido.tipo_pedido }}</span></td>
+                                <td>
+                                    <small><strong>{{ pedido.forma_pagamento or 'N/A' }}</strong></small>
+                                    {% if pedido.forma_pagamento == 'DINHEIRO' and pedido.troco_para %}
+                                        <br><small class="text-muted">Troco: {{ pedido.troco_para }}</small>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% set ns = namespace(total=0) %}
                                     {% for item in pedido.itens %}

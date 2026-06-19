@@ -8,10 +8,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
 </head>
 <body class="client-page">
-    <header class="client-header">
-        <div class="header-container">
+    <header class="client-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; text-align: left;">
+        <div class="logo">
             <h1>Dogão do Castelo</h1>
-            <p>O melhor sabor da cidade, direto para você.</p>
+            <p>O melhor da cidade</p>
+        </div>
+        <div class="user-auth" style="display: flex; gap: 10px;">
+            {% if cliente %}
+                <a href="{{ url_for('minha_conta') }}" class="btn-primary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; display: flex; align-items: center;">👤 Olá, {{ cliente.nome.split()[0] }}</a>
+            {% else %}
+                <a href="{{ url_for('cliente_login') }}" class="btn-secondary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">Entrar / Cadastrar</a>
+            {% endif %}
         </div>
     </header>
 
@@ -69,25 +76,40 @@
             <div id="checkout-section">
                 <form id="form-pedido" class="modern-form">
                     <div class="form-group">
-                        <input type="text" id="nome_cliente" name="nome_cliente" placeholder="Seu Nome Completo" required>
+                        <input type="text" id="nome_cliente" name="nome_cliente" placeholder="Seu Nome Completo" required {% if cliente %}value="{{ cliente.nome }}"{% endif %}>
                     </div>
                     <div class="form-group">
-                        <input type="tel" id="telefone_cliente" name="telefone_cliente" placeholder="Seu WhatsApp (ex: 11999999999)" required>
+                        <input type="tel" id="telefone_cliente" name="telefone_cliente" placeholder="Seu WhatsApp (ex: 11999999999)" required {% if cliente %}value="{{ cliente.telefone }}"{% endif %}>
                     </div>
                     
                     <div class="delivery-toggle">
                         <label class="radio-card">
-                            <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" checked>
+                            <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" {% if not cliente or cliente.preferencia_entrega != 'ENTREGA' %}checked{% endif %}>
                             <span class="radio-label">Vou Retirar</span>
                         </label>
                         <label class="radio-card">
-                            <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega">
+                            <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}checked{% endif %}>
                             <span class="radio-label">Entrega</span>
                         </label>
                     </div>
                     
-                    <div class="form-group" id="campo_endereco" style="display: none;">
-                        <input type="text" id="endereco_cliente" name="endereco_cliente" placeholder="Endereço Completo">
+                    <div class="form-group" id="campo_endereco" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                        <input type="text" id="endereco_cliente" name="endereco_cliente" placeholder="Endereço Completo" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="forma_pagamento" style="display:block; margin-bottom: 5px; font-weight: 600;">Forma de Pagamento:</label>
+                        <select id="forma_pagamento" name="forma_pagamento" class="form-control" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 1rem;">
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="DINHEIRO">Dinheiro</option>
+                            <option value="PIX">PIX</option>
+                            <option value="DEBITO">Cartão de Débito</option>
+                            <option value="CREDITO">Cartão de Crédito</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="campo_troco" style="display: none;">
+                        <input type="text" id="troco_para" name="troco_para" placeholder="Troco para quanto? (Deixe em branco se não precisar)">
                     </div>
 
                     <button type="submit" id="btn-finalizar" class="btn-primary-large">Finalizar Pedido</button>
