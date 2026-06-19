@@ -124,7 +124,7 @@ def cliente_cadastro():
         
         session['cliente_id'] = novo_cliente.id
         session['cliente_nome'] = novo_cliente.nome
-        return redirect(url_for('minha_conta'))
+        return redirect(url_for('cardapio'))
     return render_template('cliente_cadastro.html')
 
 @app.route('/cliente/login', methods=['GET', 'POST'])
@@ -137,7 +137,7 @@ def cliente_login():
         if cliente and check_password_hash(cliente.senha_hash, senha):
             session['cliente_id'] = cliente.id
             session['cliente_nome'] = cliente.nome
-            return redirect(url_for('minha_conta'))
+            return redirect(url_for('cardapio'))
         else:
             flash('Telefone ou senha incorretos.', 'error')
     return render_template('cliente_login.html')
@@ -146,7 +146,7 @@ def cliente_login():
 def cliente_logout():
     session.pop('cliente_id', None)
     session.pop('cliente_nome', None)
-    return redirect(url_for('home'))
+    return redirect(url_for('index'))
 
 @app.route('/minha_conta', methods=['GET', 'POST'])
 @cliente_required
@@ -405,7 +405,13 @@ def imprimir_pedido_admin(pedido_id):
     return redirect(url_for('admin_pedidos'))
 
 @app.route('/')
-def home():
+def index():
+    if 'cliente_id' in session:
+        return redirect(url_for('cardapio'))
+    return redirect(url_for('cliente_login'))
+
+@app.route('/cardapio')
+def cardapio():
     try:
         cardapio_hoje = CardapioDoDia.query.filter_by(disponivel=True).all()
         tamanhos = Tamanho.query.order_by(Tamanho.preco).all()

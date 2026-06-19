@@ -15,7 +15,7 @@
             <p>Sua área exclusiva</p>
         </div>
         <div class="user-nav" style="display: flex; gap: 15px; align-items: center;">
-            <a href="{{ url_for('home') }}" class="btn-secondary" style="text-decoration: none; padding: 8px 15px;">Fazer Pedido</a>
+            <a href="{{ url_for('cardapio') }}" class="btn-secondary" style="text-decoration: none; padding: 8px 15px;">Fazer Pedido</a>
             <a href="{{ url_for('cliente_logout') }}" class="btn-text-danger" style="text-decoration: none; width: auto;">Sair</a>
         </div>
     </header>
@@ -98,7 +98,7 @@
                     </div>
                 {% else %}
                     <p style="color: #aaa; text-align: center; margin-top: 50px;">Você ainda não fez nenhum pedido conosco.<br><br>
-                    <a href="{{ url_for('home') }}" class="btn-primary" style="text-decoration: none; padding: 10px 20px; display: inline-block; margin-top: 15px;">Fazer o Primeiro Pedido</a></p>
+                    <a href="{{ url_for('cardapio') }}" class="btn-primary" style="text-decoration: none; padding: 10px 20px; display: inline-block; margin-top: 15px;">Fazer o Primeiro Pedido</a></p>
                 {% endif %}
             </div>
         </div>
