@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Pedidos - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="admin-dashboard">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">Painel Admin</h2>
+            <nav>
+                <a href="{{ url_for('admin') }}">Tamanhos</a>
+                <a href="{{ url_for('admin_pratos') }}">Pratos</a>
+                <a href="{{ url_for('admin_cardapio') }}">Cardápio do Dia</a>
+                <a href="{{ url_for('admin_pedidos') }}" class="active">Pedidos</a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-link">Sair</a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header>
+                <h1>Gestão de Pedidos</h1>
+            </header>
+            
+            <section class="card">
+                <h2>Pedidos Recentes</h2>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Tipo</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pedido in pedidos %}
+                            <tr>
+                                <td>#{{ pedido.id }}</td>
+                                <td>{{ pedido.data_hora.strftime('%d/%m %H:%M') }}</td>
+                                <td><strong>{{ pedido.nome_cliente }}</strong><br><small>{{ pedido.telefone_cliente }}</small></td>
+                                <td><span class="badge badge-secondary">{{ pedido.tipo_pedido }}</span></td>
+                                <td>
+                                    {% set ns = namespace(total=0) %}
+                                    {% for item in pedido.itens %}
+                                        {% set ns.total = ns.total + (item.preco_unitario_pago * item.quantidade) %}
+                                    {% endfor %}
+                                    <strong>R$ {{ "%.2f"|format(ns.total) }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge status-{{ pedido.status_pedido|lower|replace(' ', '-') }}">{{ pedido.status_pedido }}</span>
+                                </td>
+                                <td>
+                                    <div class="actions-flex">
+                                        <form action="{{ url_for('atualizar_pedido', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
+                                            <select name="status" onchange="this.form.submit()" class="status-select">
+                                                <option value="PENDENTE" {% if pedido.status_pedido == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                                                <option value="EM PREPARO" {% if pedido.status_pedido == 'EM PREPARO' %}selected{% endif %}>Em Preparo</option>
+                                                <option value="PRONTO PARA RETIRADA" {% if pedido.status_pedido == 'PRONTO PARA RETIRADA' %}selected{% endif %}>Pronto Retirada</option>
+                                                <option value="SAIU PARA ENTREGA" {% if pedido.status_pedido == 'SAIU PARA ENTREGA' %}selected{% endif %}>Saiu Entrega</option>
+                                                <option value="ENTREGUE" {% if pedido.status_pedido == 'ENTREGUE' %}selected{% endif %}>Entregue</option>
+                                                <option value="CANCELADO" {% if pedido.status_pedido == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                                            </select>
+                                        </form>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="alert('Detalhes Pedido #{{pedido.id}}:\n{% for item in pedido.itens %}{{item.quantidade}}x {{item.prato.nome_prato}} ({{item.tamanho.nome}}) - R$ {{item.preco_unitario_pago}}\n{% endfor %}')">Ver Itens</button>
+                                        <form action="{{ url_for('imprimir_pedido_admin', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
+                                            <button type="submit" class="btn btn-primary btn-sm" title="Reimprimir Comanda">🖨️ Imprimir</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center">Nenhum pedido recebido ainda.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -29,3 +29,7 @@ __pycache__/
 # Ignora arquivos de sistema (ex: Mac e Windows).
 .DS_Store
 Thumbs.db
+
+# --- Arquivos Dinâmicos da Aplicação ---
+fila_impressao/
+static/uploads/

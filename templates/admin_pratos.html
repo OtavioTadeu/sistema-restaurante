@@ -1,54 +1,103 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Pratos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
-    <div class="container">
-        <a href="/admin">&larr; Voltar ao Admin</a>
+    <div class="admin-dashboard">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">Painel Admin</h2>
+            <nav>
+                <a href="{{ url_for('admin') }}">Tamanhos</a>
+                <a href="{{ url_for('admin_pratos') }}" class="active">Pratos</a>
+                <a href="{{ url_for('admin_cardapio') }}">Cardápio do Dia</a>
+                <a href="{{ url_for('admin_pedidos') }}">Pedidos</a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-link">Sair</a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header>
+                <h1>Gerenciar Pratos do Catálogo</h1>
+                <p>Aqui você cadastra todos os pratos que o restaurante sabe fazer.</p>
+            </header>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div style="padding: 10px; margin-bottom: 20px; border-radius: 5px; color: white; background-color: {% if category == 'error' %}var(--danger){% else %}var(--success){% endif %};">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <section class="card form-section">
+                <h2>Cadastrar Novo Prato</h2>
+                <form action="/admin/add_prato" method="POST" enctype="multipart/form-data" class="modern-form">
+                    <div class="form-group">
+                        <label for="nome_prato">Nome do Prato (ex: Frango à Parmegiana):</label>
+                        <input type="text" id="nome_prato" name="nome_prato" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao_base">Acompanhamentos Padrão:</label>
+                        <input type="text" id="descricao_base" name="descricao_base">
+                    </div>
+                    <div class="form-group">
+                        <label>Foto do Prato:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="url" id="foto_url" name="foto_url" placeholder="URL da foto (opcional)" style="flex: 1; margin: 0;">
+                            <span style="color: var(--text-muted);">ou</span>
+                            <input type="file" id="foto_arquivo" name="foto_arquivo" accept="image/*" style="flex: 1; margin: 0; padding: 7px; background: #fff;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Salvar Prato</button>
+                </form>
+            </section>
 
-        <h1>Gerenciar Pratos do Catálogo</h1>
-        <p>Aqui você cadastra todos os pratos que o restaurante sabe fazer.</p>
-
-        <div class="form-section">
-            <h2>Cadastrar Novo Prato</h2>
-
-            <form action="/admin/add_prato" method="POST">
-                <label for="nome_prato">Nome do Prato (ex: Frango à Parmegiana):</label>
-                <input type="text" id="nome_prato" name="nome_prato" required>
-
-                <label for="descricao_base">Acompanhamentos Padrão (ex: Arroz, feijão, fritas):</label>
-                <input type="text" id="descricao_base" name="descricao_base">
-
-                <button type="submit">Salvar Prato</button>
-            </form>
-        </div>
-
-        <div class="list-section">
-            <h2>Pratos Cadastrados</h2>
-            <ul>
-                {% for prato in pratos %}
-                <li>
-                    <a href="{{ url_for('delete_prato', prato_id=prato.id) }}"
-                        style="color: red; float: right; text-decoration: none;"
-                        onclick="return confirm('Tem certeza que quer excluir este prato do catálogo?');">[X]</a>
-                    <a href="{{ url_for('edit_prato', prato_id=prato.id) }}"
-                        style="float: right; margin-right: 10px;">(Editar)</a>
-                    <strong>{{ prato.nome_prato }}</strong>
-                    <br>
-                    <small>{{ prato.descricao_base }}</small>
-                </li>
-                {% else %}
-                <li>Nenhum prato cadastrado ainda.</li>
-                {% endfor %}
-            </ul>
-        </div>
+            <section class="card list-section">
+                <h2>Pratos Cadastrados</h2>
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Foto</th>
+                                <th>Prato</th>
+                                <th>Acompanhamentos</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prato in pratos %}
+                            <tr>
+                                <td>
+                                    {% if prato.foto_url %}
+                                    <img src="{{ prato.foto_url }}" alt="Foto" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                    {% else %}
+                                    <div style="width: 50px; height: 50px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">Sem Foto</div>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ prato.nome_prato }}</strong></td>
+                                <td><small>{{ prato.descricao_base }}</small></td>
+                                <td>
+                                    <div class="actions-flex">
+                                        <a href="{{ url_for('edit_prato', prato_id=prato.id) }}" class="btn btn-secondary btn-sm">Editar</a>
+                                        <a href="{{ url_for('delete_prato', prato_id=prato.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que quer excluir este prato?');">Excluir</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center">Nenhum prato cadastrado ainda.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
     </div>
 </body>
-
 </html>

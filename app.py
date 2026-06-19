@@ -1,6 +1,8 @@
 import os
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash
+from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -9,8 +11,18 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'restaurante.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = os.environ.get('SECRET_KEY', 'admin123')
+app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static', 'uploads')
 
 db = SQLAlchemy(app)
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 class Tamanho(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -22,6 +34,7 @@ class Prato(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome_prato = db.Column(db.String(100), nullable=False, unique=True)
     descricao_base = db.Column(db.String(200))
+    foto_url = db.Column(db.String(500))
     cardapios = db.relationship('CardapioDoDia', back_populates='prato')
 
 class CardapioDoDia(db.Model):
@@ -48,13 +61,30 @@ class ItemPedido(db.Model):
     quantidade = db.Column(db.Integer, default=1, nullable=False)
     preco_unitario_pago = db.Column(db.Float, nullable=False)
     pedido_id = db.Column(db.Integer, db.ForeignKey('pedido.id'), nullable=False)
-    cardapio_id = db.Column(db.Integer, db.ForeignKey('cardapio_do_dia.id'), nullable=False)
+    prato_id = db.Column(db.Integer, db.ForeignKey('prato.id'), nullable=False)
     tamanho_id = db.Column(db.Integer, db.ForeignKey('tamanho.id'), nullable=False)
     pedido = db.relationship('Pedido', back_populates='itens')
-    cardapio = db.relationship('CardapioDoDia')
+    prato = db.relationship('Prato')
     tamanho = db.relationship('Tamanho')
 
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        senha = request.form.get('senha')
+        if senha == app.secret_key:
+            session['logged_in'] = True
+            return redirect(url_for('admin'))
+        else:
+            flash('Senha incorreta', 'error')
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('admin_login'))
+
 @app.route('/admin')
+@login_required
 def admin():
     try:
         tamanhos = Tamanho.query.all()
@@ -63,6 +93,7 @@ def admin():
     return render_template('admin.html', tamanhos=tamanhos)
 
 @app.route('/admin/pratos')
+@login_required
 def admin_pratos():
     try:
         pratos = Prato.query.all()
@@ -71,6 +102,7 @@ def admin_pratos():
     return render_template('admin_pratos.html', pratos=pratos)
 
 @app.route('/admin/cardapio')
+@login_required
 def admin_cardapio():
     try:
         pratos_catalogo = Prato.query.all()
@@ -81,6 +113,7 @@ def admin_cardapio():
     return render_template('admin_cardapio.html', pratos_catalogo=pratos_catalogo, cardapio_hoje=cardapio_hoje)
 
 @app.route('/admin/add_tamanho', methods=['POST'])
+@login_required
 def add_tamanho():
     if request.method == 'POST':
         try:
@@ -92,17 +125,21 @@ def add_tamanho():
         return redirect(url_for('admin'))
 
 @app.route('/admin/delete_tamanho/<int:tamanho_id>')
+@login_required
 def delete_tamanho(tamanho_id):
     try:
         tamanho = Tamanho.query.get(tamanho_id)
         if tamanho:
             db.session.delete(tamanho)
             db.session.commit()
-    except:
+            flash('Tamanho excluído com sucesso.', 'success')
+    except Exception as e:
         db.session.rollback()
+        flash('Não é possível excluir este tamanho pois ele já está vinculado a um pedido histórico.', 'error')
     return redirect(url_for('admin'))
 
 @app.route('/admin/edit_tamanho/<int:tamanho_id>', methods=['GET', 'POST'])
+@login_required
 def edit_tamanho(tamanho_id):
     tamanho = Tamanho.query.get_or_404(tamanho_id)
     if request.method == 'POST':
@@ -116,10 +153,19 @@ def edit_tamanho(tamanho_id):
     return render_template('edit_tamanho.html', tamanho=tamanho)
 
 @app.route('/admin/add_prato', methods=['POST'])
+@login_required
 def add_prato():
     if request.method == 'POST':
         try:
-            novo_prato = Prato(nome_prato=request.form['nome_prato'], descricao_base=request.form['descricao_base'])
+            foto_url = request.form.get('foto_url', '')
+            foto_arquivo = request.files.get('foto_arquivo')
+            if foto_arquivo and foto_arquivo.filename != '':
+                filename = secure_filename(foto_arquivo.filename)
+                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                foto_arquivo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                foto_url = url_for('static', filename='uploads/' + filename)
+
+            novo_prato = Prato(nome_prato=request.form['nome_prato'], descricao_base=request.form['descricao_base'], foto_url=foto_url)
             db.session.add(novo_prato)
             db.session.commit()
         except:
@@ -127,23 +173,39 @@ def add_prato():
         return redirect(url_for('admin_pratos'))
 
 @app.route('/admin/delete_prato/<int:prato_id>')
+@login_required
 def delete_prato(prato_id):
     try:
         prato = Prato.query.get(prato_id)
         if prato:
             db.session.delete(prato)
             db.session.commit()
-    except:
+            flash('Prato excluído com sucesso.', 'success')
+    except Exception as e:
         db.session.rollback()
+        flash('Não é possível excluir este prato pois ele já está no cardápio de hoje ou possui pedidos vinculados.', 'error')
     return redirect(url_for('admin_pratos'))
 
 @app.route('/admin/edit_prato/<int:prato_id>', methods=['GET', 'POST'])
+@login_required
 def edit_prato(prato_id):
     prato = Prato.query.get_or_404(prato_id)
     if request.method == 'POST':
         try:
             prato.nome_prato = request.form['nome_prato']
             prato.descricao_base = request.form['descricao_base']
+            
+            nova_foto_url = request.form.get('foto_url', '')
+            foto_arquivo = request.files.get('foto_arquivo')
+            if foto_arquivo and foto_arquivo.filename != '':
+                filename = secure_filename(foto_arquivo.filename)
+                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                foto_arquivo.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                nova_foto_url = url_for('static', filename='uploads/' + filename)
+            
+            if nova_foto_url:
+                prato.foto_url = nova_foto_url
+                
             db.session.commit()
             return redirect(url_for('admin_pratos'))
         except:
@@ -151,6 +213,7 @@ def edit_prato(prato_id):
     return render_template('edit_prato.html', prato=prato)
 
 @app.route('/admin/add_cardapio', methods=['POST'])
+@login_required
 def add_cardapio():
     if request.method == 'POST':
         prato_id = request.form['prato_id']
@@ -169,6 +232,7 @@ def add_cardapio():
         return redirect(url_for('admin_cardapio'))
 
 @app.route('/admin/toggle_disponivel/<int:item_id>')
+@login_required
 def toggle_disponivel(item_id):
     try:
         item = CardapioDoDia.query.get(item_id)
@@ -180,6 +244,7 @@ def toggle_disponivel(item_id):
     return redirect(url_for('admin_cardapio'))
 
 @app.route('/admin/remove_cardapio/<int:item_id>')
+@login_required
 def remove_cardapio(item_id):
     try:
         item = CardapioDoDia.query.get(item_id)
@@ -191,6 +256,7 @@ def remove_cardapio(item_id):
     return redirect(url_for('admin_cardapio'))
 
 @app.route('/admin/clear_cardapio', methods=['POST'])
+@login_required
 def clear_cardapio():
     try:
         db.session.query(CardapioDoDia).delete()
@@ -198,6 +264,48 @@ def clear_cardapio():
     except:
         db.session.rollback()
     return redirect(url_for('admin_cardapio'))
+
+@app.route('/admin/pedidos')
+@login_required
+def admin_pedidos():
+    try:
+        pedidos = Pedido.query.order_by(Pedido.data_hora.desc()).all()
+    except:
+        pedidos = []
+    return render_template('admin_pedidos.html', pedidos=pedidos)
+
+@app.route('/admin/atualizar_pedido/<int:pedido_id>', methods=['POST'])
+@login_required
+def atualizar_pedido(pedido_id):
+    try:
+        pedido = Pedido.query.get(pedido_id)
+        if pedido:
+            novo_status = request.form.get('status')
+            if novo_status:
+                pedido.status_pedido = novo_status
+                db.session.commit()
+    except:
+        db.session.rollback()
+    return redirect(url_for('admin_pedidos'))
+
+@app.route('/admin/imprimir_pedido/<int:pedido_id>', methods=['POST'])
+@login_required
+def imprimir_pedido_admin(pedido_id):
+    try:
+        pedido = Pedido.query.get(pedido_id)
+        if pedido:
+            itens_formatados = []
+            for item in pedido.itens:
+                itens_formatados.append({
+                    'pratoNome': item.prato.nome_prato,
+                    'tamanhoNome': item.tamanho.nome,
+                    'quantidade': item.quantidade,
+                    'preco': item.preco_unitario_pago
+                })
+            salvar_arquivo_cupom(pedido, itens_formatados)
+    except:
+        pass
+    return redirect(url_for('admin_pedidos'))
 
 @app.route('/')
 def home():
@@ -296,7 +404,7 @@ def api_finalizar_pedido():
         for item in itens_carrinho:
             novo_item = ItemPedido(
                 pedido_id=novo_pedido.id,
-                cardapio_id=int(item['pratoId']),
+                prato_id=int(item['pratoId']),
                 tamanho_id=int(item['tamanhoId']),
                 quantidade=int(item['quantidade']),
                 preco_unitario_pago=float(item['preco'])

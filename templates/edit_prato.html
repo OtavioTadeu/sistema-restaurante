@@ -3,27 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editar Prato</title>
+    <title>Editar Prato - Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <a href="{{ url_for('admin_pratos') }}">&larr; Voltar para Pratos</a>
+    <div class="admin-dashboard">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">Painel Admin</h2>
+            <nav>
+                <a href="{{ url_for('admin') }}">Tamanhos</a>
+                <a href="{{ url_for('admin_pratos') }}" class="active">Pratos</a>
+                <a href="{{ url_for('admin_cardapio') }}">Cardápio do Dia</a>
+                <a href="{{ url_for('admin_pedidos') }}">Pedidos</a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-link">Sair</a>
+            </nav>
+        </aside>
         
-        <h1>Editar Prato do Catálogo</h1>
-
-        <div class="form-section">
-            <form action="{{ url_for('edit_prato', prato_id=prato.id) }}" method="POST">
-                
-                <label for="nome_prato">Nome do Prato:</label>
-                <input type="text" id="nome_prato" name="nome_prato" value="{{ prato.nome_prato }}" required>
-                
-                <label for="descricao_base">Acompanhamentos Padrão:</label>
-                <input type="text" id="descricao_base" name="descricao_base" value="{{ prato.descricao_base }}">
-                
-                <button type="submit">Salvar Alterações</button>
-            </form>
-        </div>
+        <main class="main-content">
+            <header>
+                <h1>Editar Prato do Catálogo</h1>
+            </header>
+            
+            <section class="card form-section">
+                <form action="{{ url_for('edit_prato', prato_id=prato.id) }}" method="POST" enctype="multipart/form-data" class="modern-form">
+                    <div class="form-group">
+                        <label for="nome_prato">Nome do Prato:</label>
+                        <input type="text" id="nome_prato" name="nome_prato" value="{{ prato.nome_prato }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao_base">Acompanhamentos Padrão:</label>
+                        <input type="text" id="descricao_base" name="descricao_base" value="{{ prato.descricao_base }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Foto do Prato:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="url" id="foto_url" name="foto_url" value="{{ prato.foto_url or '' }}" placeholder="URL da foto (opcional)" style="flex: 1; margin: 0;">
+                            <span style="color: var(--text-muted);">ou</span>
+                            <input type="file" id="foto_arquivo" name="foto_arquivo" accept="image/*" style="flex: 1; margin: 0; padding: 7px; background: #fff;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <a href="{{ url_for('admin_pratos') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </section>
+        </main>
     </div>
 </body>
 </html>

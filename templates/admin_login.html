@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Admin Restaurante</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <h2>Acesso Restrito</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <form method="POST" action="{{ url_for('admin_login') }}" class="modern-form">
+            <div class="form-group">
+                <label for="senha">Senha Administrativa:</label>
+                <input type="password" id="senha" name="senha" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
+        </form>
+    </div>
+</body>
+</html>
