@@ -1,138 +1,136 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faça seu Pedido - Dogão do Castelo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
-</head>
-<body class="client-page">
-    <header class="client-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; text-align: left;">
-        <div class="logo">
-            <h1>Dogão do Castelo</h1>
-            <p>O melhor da cidade</p>
-        </div>
-        <div class="user-auth" style="display: flex; gap: 10px;">
-            {% if cliente %}
-                <a href="{{ url_for('minha_conta') }}" class="btn-primary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; display: flex; align-items: center;">👤 Olá, {{ cliente.nome.split()[0] }}</a>
-            {% else %}
-                <a href="{{ url_for('cliente_login') }}" class="btn-secondary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">Entrar / Cadastrar</a>
-            {% endif %}
-        </div>
-    </header>
+{% extends 'base_client.html' %}
 
-    <div class="container main-layout">
-        <div class="cardapio-coluna">
-            <h2 class="section-title">Menu do Dia</h2>
-            <div class="cardapio-grid">
-                {% for item in cardapio_hoje %}
-                <div class="prato-card">
-                    <div class="prato-imagem" style="background-image: url('{{ item.prato.foto_url or url_for('static', filename='default_food.jpg') }}');"></div>
-                    <div class="prato-content">
-                        <h3>{{ item.prato.nome_prato }}</h3>
-                        <p class="descricao">{{ item.descricao_dia }}</p>
-                        <div class="tamanhos-list">
-                            {% for tam in tamanhos %}
-                            <div class="tamanho-opcao">
-                                <div class="tamanho-info">
-                                    <span class="tamanho-nome">{{ tam.nome }}</span>
-                                    <span class="tamanho-preco">R$ {{ "%.2f"|format(tam.preco) }}</span>
-                                </div>
-                                <button class="btn-add-item" 
-                                    data-prato-id="{{ item.prato.id }}"
-                                    data-prato-nome="{{ item.prato.nome_prato }}" 
-                                    data-tamanho-id="{{ tam.id }}"
-                                    data-tamanho-nome="{{ tam.nome }}" 
-                                    data-preco="{{ tam.preco }}">
-                                    + Adicionar
-                                </button>
+{% block title %}Faça seu Pedido - Dogão do Castelo{% endblock %}
+
+{% block header %}
+<header class="client-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; text-align: left;">
+    <div class="logo">
+        <h1>Dogão do Castelo</h1>
+        <p>O melhor da cidade</p>
+    </div>
+    <div class="user-auth" style="display: flex; gap: 10px;">
+        {% if cliente %}
+            <a href="{{ url_for('minha_conta') }}" class="btn-primary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; display: flex; align-items: center;">👤 Olá, {{ cliente.nome.split()[0] }}</a>
+        {% else %}
+            <a href="{{ url_for('cliente_login') }}" class="btn-secondary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">Entrar / Cadastrar</a>
+        {% endif %}
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="container main-layout">
+    <div class="cardapio-coluna">
+        <h2 class="section-title">Menu do Dia</h2>
+        <div class="cardapio-grid">
+            {% for item in cardapio_hoje %}
+            <div class="prato-card">
+                <div class="prato-imagem" style="background-image: url('{{ item.prato.foto_url or '' }}');"></div>
+                <div class="prato-content">
+                    <h3>{{ item.prato.nome_prato }}</h3>
+                    <p class="descricao">{{ item.descricao_dia }}</p>
+                    <div class="tamanhos-list">
+                        {% for tam in tamanhos %}
+                        <div class="tamanho-opcao">
+                            <div class="tamanho-info">
+                                <span class="tamanho-nome">{{ tam.nome }}</span>
+                                <span class="tamanho-preco">R$ {{ "%.2f"|format(tam.preco) }}</span>
                             </div>
-                            {% endfor %}
+                            <button class="btn-add-item" 
+                                data-prato-id="{{ item.prato.id }}"
+                                data-prato-nome="{{ item.prato.nome_prato }}" 
+                                data-tamanho-id="{{ tam.id }}"
+                                data-tamanho-nome="{{ tam.nome }}" 
+                                data-preco="{{ tam.preco }}">
+                                + Adicionar
+                            </button>
                         </div>
+                        {% endfor %}
                     </div>
                 </div>
-                {% else %}
-                <div class="empty-state">
-                    <p>O cardápio de hoje ainda está sendo preparado.</p>
-                </div>
-                {% endfor %}
             </div>
-        </div>
-
-        <div class="carrinho-coluna" id="carrinho-panel">
-            <div class="carrinho-header">
-                <h2>Meu Pedido <span id="cart-badge" class="cart-badge">0</span></h2>
+            {% else %}
+            <div class="empty-state">
+                <p>O cardápio de hoje ainda está sendo preparado.</p>
             </div>
-            <div id="lista-carrinho" class="lista-carrinho">
-                <div class="empty-cart-msg">Seu carrinho está vazio.</div>
-            </div>
-            <div class="carrinho-total">
-                <span>Total:</span>
-                <span id="total-carrinho">R$ 0.00</span>
-            </div>
-            <button type="button" id="clear-cart-btn" class="btn-text-danger">Limpar Carrinho</button>
-            
-            <div id="checkout-section">
-                <form id="form-pedido" class="modern-form">
-                    <div class="form-group">
-                        <input type="text" id="nome_cliente" name="nome_cliente" placeholder="Seu Nome Completo" required {% if cliente %}value="{{ cliente.nome }}"{% endif %}>
-                    </div>
-                    <div class="form-group">
-                        <input type="tel" id="telefone_cliente" name="telefone_cliente" placeholder="Seu WhatsApp (ex: 11999999999)" required {% if cliente %}value="{{ cliente.telefone }}"{% endif %}>
-                    </div>
-                    
-                    <div class="delivery-toggle">
-                        <label class="radio-card">
-                            <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" {% if not cliente or cliente.preferencia_entrega != 'ENTREGA' %}checked{% endif %}>
-                            <span class="radio-label">Vou Retirar</span>
-                        </label>
-                        <label class="radio-card">
-                            <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}checked{% endif %}>
-                            <span class="radio-label">Entrega</span>
-                        </label>
-                    </div>
-                    
-                    <div class="form-group" id="campo_endereco" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
-                        <input type="text" id="endereco_cliente" name="endereco_cliente" placeholder="Endereço Completo" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="forma_pagamento" style="display:block; margin-bottom: 5px; font-weight: 600;">Forma de Pagamento:</label>
-                        <select id="forma_pagamento" name="forma_pagamento" class="form-control" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 1rem;">
-                            <option value="" disabled selected>Selecione...</option>
-                            <option value="DINHEIRO">Dinheiro</option>
-                            <option value="PIX">PIX</option>
-                            <option value="DEBITO">Cartão de Débito</option>
-                            <option value="CREDITO">Cartão de Crédito</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" id="campo_troco" style="display: none;">
-                        <input type="text" id="troco_para" name="troco_para" placeholder="Troco para quanto? (Deixe em branco se não precisar)">
-                    </div>
-
-                    <button type="submit" id="btn-finalizar" class="btn-primary-large">Finalizar Pedido</button>
-                </form>
-            </div>
+            {% endfor %}
         </div>
     </div>
 
-    <!-- Modal de Sucesso / WhatsApp -->
-    <div id="success-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="success-icon">✓</div>
-            <h2>Pedido Confirmado!</h2>
-            <p>Seu pedido (#<span id="modal-pedido-id"></span>) foi registrado com sucesso em nosso sistema.</p>
-            <p>Para agilizar o atendimento, envie o pedido para o nosso WhatsApp!</p>
-            
-            <a href="#" id="btn-whatsapp" class="btn-whatsapp" target="_blank">
-                Enviar para o WhatsApp
-            </a>
-            <button id="btn-close-modal" class="btn-secondary">Fechar</button>
+    <div class="carrinho-coluna" id="carrinho-panel">
+        <div class="carrinho-header">
+            <h2>Meu Pedido <span id="cart-badge" class="cart-badge">0</span></h2>
+        </div>
+        <div id="lista-carrinho" class="lista-carrinho">
+            <div class="empty-cart-msg">Seu carrinho está vazio.</div>
+        </div>
+        <div class="carrinho-total">
+            <span>Total:</span>
+            <span id="total-carrinho">R$ 0.00</span>
+        </div>
+        <button type="button" id="clear-cart-btn" class="btn-text-danger">Limpar Carrinho</button>
+        
+        <div id="checkout-section">
+            <form id="form-pedido" class="modern-form">
+                <div class="form-group">
+                    <input type="text" id="nome_cliente" name="nome_cliente" placeholder="Seu Nome Completo" required {% if cliente %}value="{{ cliente.nome }}"{% endif %}>
+                </div>
+                <div class="form-group">
+                    <input type="tel" id="telefone_cliente" name="telefone_cliente" placeholder="Seu WhatsApp (ex: 31999999999)" required {% if cliente %}value="{{ cliente.telefone }}"{% endif %}>
+                </div>
+                
+                <div class="delivery-toggle">
+                    <label class="radio-card">
+                        <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" {% if not cliente or cliente.preferencia_entrega != 'ENTREGA' %}checked{% endif %}>
+                        <span class="radio-label">Vou Retirar</span>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}checked{% endif %}>
+                        <span class="radio-label">Entrega</span>
+                    </label>
+                </div>
+                
+                <div class="form-group" id="campo_endereco" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                    <input type="text" id="endereco_cliente" name="endereco_cliente" placeholder="Endereço Completo" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
+                </div>
+
+                <div class="form-group">
+                    <label for="forma_pagamento" style="display:block; margin-bottom: 5px; font-weight: 600;">Forma de Pagamento:</label>
+                    <select id="forma_pagamento" name="forma_pagamento" class="form-control" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 1rem;">
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="DINHEIRO">Dinheiro</option>
+                        <option value="PIX">PIX</option>
+                        <option value="DEBITO">Cartão de Débito</option>
+                        <option value="CREDITO">Cartão de Crédito</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="campo_troco" style="display: none;">
+                    <input type="text" id="troco_para" name="troco_para" placeholder="Troco para quanto? (Deixe em branco se não precisar)">
+                </div>
+
+                <button type="submit" id="btn-finalizar" class="btn-primary-large">Finalizar Pedido</button>
+            </form>
         </div>
     </div>
+</div>
 
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
-</body>
-</html>
+<!-- Modal de Sucesso / WhatsApp -->
+<div id="success-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="success-icon">✓</div>
+        <h2>Pedido Confirmado!</h2>
+        <p>Seu pedido (#<span id="modal-pedido-id"></span>) foi registrado com sucesso em nosso sistema.</p>
+        <p>Para agilizar o atendimento, envie o pedido para o nosso WhatsApp!</p>
+        
+        <a href="#" id="btn-whatsapp" class="btn-whatsapp" target="_blank">
+            Enviar para o WhatsApp
+        </a>
+        <button id="btn-close-modal" class="btn-secondary">Fechar</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

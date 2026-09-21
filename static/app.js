@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalPedidoId = document.getElementById('modal-pedido-id');
 
     // Número do restaurante para WhatsApp (exemplo, deve ser trocado pelo real)
-    const RESTAURANTE_WHATSAPP = "5511999999999"; 
+    const RESTAURANTE_WHATSAPP = "553194585341"; 
 
     let cart = [];
 

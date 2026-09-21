@@ -32,4 +32,9 @@ Thumbs.db
 
 # --- Arquivos Dinâmicos da Aplicação ---
 fila_impressao/
+pedidos_impressos/
 static/uploads/
+
+# --- Configuração Sensível e Binários ---
+config.json
+cloudflared.exe

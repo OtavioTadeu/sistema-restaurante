@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dogão do Castelo{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="client-page">
+    {% block header %}
+    <header class="client-header">
+        <div class="logo">
+            <h1>Dogão do Castelo</h1>
+            <p>{% block subtitle %}O melhor da cidade{% endblock %}</p>
+        </div>
+    </header>
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

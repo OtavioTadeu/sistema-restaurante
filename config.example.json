@@ -1,0 +1,4 @@
+{
+  "secret_key": "sua_chave_secreta_aqui",
+  "admin_password_hash": "scrypt:..."
+}

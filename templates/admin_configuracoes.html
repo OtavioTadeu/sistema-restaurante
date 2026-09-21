@@ -1,0 +1,27 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Painel Admin - Configurações{% endblock %}
+
+{% block content %}
+<header>
+    <h1>Configurações do Sistema</h1>
+</header>
+
+<section class="card" style="max-width: 600px;">
+    <h2>Alterar Senha de Administrador</h2>
+    
+    <form action="{{ url_for('admin_configuracoes') }}" method="POST" class="modern-form">
+        <div class="form-group">
+            <label for="senha_atual">Senha Atual:</label>
+            <input type="password" id="senha_atual" name="senha_atual" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="nova_senha">Nova Senha:</label>
+            <input type="password" id="nova_senha" name="nova_senha" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Nova Senha</button>
+    </form>
+</section>
+{% endblock %}

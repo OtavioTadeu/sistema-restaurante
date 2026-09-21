@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Painel Admin{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="admin-dashboard">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">Painel Admin</h2>
+            <nav>
+                <a href="{{ url_for('admin') }}" {% if request.endpoint in ['admin', 'edit_tamanho'] %}class="active"{% endif %}>Tamanhos</a>
+                <a href="{{ url_for('admin_pratos') }}" {% if request.endpoint in ['admin_pratos', 'edit_prato'] %}class="active"{% endif %}>Pratos</a>
+                <a href="{{ url_for('admin_cardapio') }}" {% if request.endpoint == 'admin_cardapio' %}class="active"{% endif %}>Cardápio do Dia</a>
+                <a href="{{ url_for('admin_pedidos') }}" {% if request.endpoint == 'admin_pedidos' %}class="active"{% endif %}>Pedidos</a>
+                <a href="{{ url_for('admin_configuracoes') }}" {% if request.endpoint == 'admin_configuracoes' %}class="active"{% endif %}>Configurações</a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-link">Sair</a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-flash alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>
