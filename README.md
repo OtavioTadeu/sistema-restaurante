@@ -42,22 +42,13 @@ Como o sistema opera no próprio computador do restaurante, mas precisa ser aces
     ```
 
 ### Passo 2: Rodar o Sistema (Obrigatório para o Expediente)
-Sempre que for abrir a lanchonete, você precisará abrir **dois terminais** na pasta do projeto:
 
-**Terminal 1 (O Servidor do Site):**
-Mantenha o sistema rodando.
-```bash
-.\venv\Scripts\activate
-py app.py
-```
+Para abrir a lanchonete e iniciar tudo com **1 único clique**, basta dar duplo clique no arquivo:
+👉 **`iniciar_sistema.bat`**
 
-**Terminal 2 (O Túnel Cloudflare para os Clientes):**
-Mantenha este rodando para que os clientes acessem o site pelo celular usando a internet 4G/Wifi da casa deles. Ele vai gerar um link (ex: `https://palavra-aleatoria.trycloudflare.com`)
-```bash
-.\cloudflared.exe tunnel --url http://localhost:5000
-```
+O inicializador abrirá o menu onde você pode escolher:
+- **[1] NGROK (Recomendado):** Inicia o servidor, o impressor de comandas e o túnel com o seu **domínio fixo permanente** (ex: `https://homalographic-unbiliously-randall.ngrok-free.dev`), sem alterar o link para os clientes.
+- **[2] CLOUDFLARE:** Inicia o túnel direto do Cloudflare (link temporário).
+- **[3] Local:** Inicia apenas no computador da loja (`http://localhost:5000`) sem acesso externo.
 
-*(Opcional) Terminal 3: Se tiver script vigia de impressão automática ativado:*
-```bash
-py impressor.py
-```
+As 3 janelas necessárias (Servidor Flask, Impressor de Comandas e Túnel) serão abertas automaticamente e organizadas por cores. Mantenha-as abertas durante o expediente!

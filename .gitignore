@@ -38,3 +38,7 @@ static/uploads/
 # --- Configuração Sensível e Binários ---
 config.json
 cloudflared.exe
+ngrok.exe
+ngrok.yml
+ngrok_domain.txt
+
