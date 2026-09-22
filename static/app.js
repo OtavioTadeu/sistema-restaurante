@@ -35,20 +35,30 @@ document.addEventListener('DOMContentLoaded', () => {
             addToCart(item);
             
             // Animação de feedback no botão
-            const btnOriginalText = button.innerHTML;
+            if (!button.dataset.originalHtml) {
+                button.dataset.originalHtml = button.innerHTML;
+            }
+            
+            if (button._resetTimer) {
+                clearTimeout(button._resetTimer);
+            }
+            
             button.innerHTML = '✓ Adicionado';
             button.style.background = 'var(--success)';
             button.style.color = '#fff';
             button.style.borderColor = 'var(--success)';
             
-            setTimeout(() => {
-                button.innerHTML = btnOriginalText;
+            button._resetTimer = setTimeout(() => {
+                button.innerHTML = button.dataset.originalHtml;
                 button.style.background = '';
                 button.style.color = '';
                 button.style.borderColor = '';
-            }, 1000);
+                button._resetTimer = null;
+            }, 800);
             
             // Feedback badge
+            cartBadge.classList.remove('bump');
+            void cartBadge.offsetWidth;
             cartBadge.classList.add('bump');
             setTimeout(() => cartBadge.classList.remove('bump'), 200);
         });
