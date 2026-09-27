@@ -41,4 +41,7 @@ cloudflared.exe
 ngrok.exe
 ngrok.yml
 ngrok_domain.txt
+*.old
+.*.old
+
 
