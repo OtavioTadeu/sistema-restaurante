@@ -1,162 +1,174 @@
 {% extends 'base_client.html' %}
+{% from 'partials/_ui.html' import icon %}
 
-{% block title %}Faça seu Pedido - Dogão do Castelo{% endblock %}
-
-{% block header %}
-<header class="client-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; text-align: left; flex-wrap: wrap; gap: 15px;">
-    <div class="logo">
-        <h1>Dogão do Castelo</h1>
-        <p>O melhor da cidade</p>
-    </div>
-    <div class="user-auth" style="display: flex; gap: 10px; align-items: center;">
-        {% if cliente %}
-            <a href="{{ url_for('minha_conta') }}" class="btn-primary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; display: flex; align-items: center;">👤 Olá, {{ cliente.nome.split()[0] }}</a>
-        {% else %}
-            <a href="{{ url_for('cliente_login') }}" class="btn-secondary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em;">Entrar / Cadastrar</a>
-        {% endif %}
-    </div>
-</header>
-{% endblock %}
+{% block title %}Cardápio de Hoje — Dogão do Castelo{% endblock %}
 
 {% block content %}
-<div class="container main-layout">
-    <div class="cardapio-coluna">
-        {% if not loja_aberta %}
-        <div class="loja-fechada-banner" style="background: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; border-radius: 12px; padding: 20px; margin-bottom: 25px; text-align: center;">
-            <h3 style="color: #e74c3c; margin: 0 0 8px 0; font-size: 1.3rem;">🔴 Restaurante Fechado no Momento</h3>
-            <p style="color: #eee; margin: 0; font-size: 1rem;">{{ mensagem_loja_fechada }}</p>
-            <small style="color: #bbb; display: block; margin-top: 8px;">Você pode visualizar o cardápio, mas o fechamento de pedidos está temporariamente pausado.</small>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Peça online</p>
+            <h1>Cardápio <em>de hoje</em></h1>
         </div>
-        {% endif %}
-
-        <h2 class="section-title">Menu do Dia</h2>
-        <div class="cardapio-grid">
-            {% for item in cardapio_hoje %}
-            <div class="prato-card">
-                <div class="prato-imagem" style="background-image: url('{{ item.prato.foto_url or '' }}');"></div>
-                <div class="prato-content">
-                    <h3>{{ item.prato.nome_prato }}</h3>
-                    <p class="descricao">{{ item.descricao_dia }}</p>
-                    <div class="tamanhos-list">
-                        {% for tam in tamanhos %}
-                        <div class="tamanho-opcao">
-                            <div class="tamanho-info">
-                                <span class="tamanho-nome">{{ tam.nome }}</span>
-                                <span class="tamanho-preco">R$ {{ "%.2f"|format(tam.preco) }}</span>
-                            </div>
-                            <button class="btn-add-item" 
-                                data-prato-id="{{ item.prato.id }}"
-                                data-prato-nome="{{ item.prato.nome_prato }}" 
-                                data-tamanho-id="{{ tam.id }}"
-                                data-tamanho-nome="{{ tam.nome }}" 
-                                data-preco="{{ tam.preco }}"
-                                {% if not loja_aberta %}disabled style="opacity: 0.6; cursor: not-allowed;" title="Lanchonete fechada"{% endif %}>
-                                + Adicionar
-                            </button>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% else %}
-            <div class="empty-state">
-                <p>O cardápio de hoje ainda está sendo preparado. Volte em instantes!</p>
-            </div>
-            {% endfor %}
-        </div>
+        <p class="meta">
+            <strong>{{ data_hoje }}</strong>
+            {% if cliente %}Bom te ver de novo, {{ cliente.nome.split()[0] }}.{% else %}Retirada no balcão ou entrega.{% endif %}
+        </p>
     </div>
 
-    <div class="carrinho-coluna" id="carrinho-panel">
-        <div class="carrinho-header">
-            <h2>Meu Pedido <span id="cart-badge" class="cart-badge">0</span></h2>
-        </div>
-        <div id="lista-carrinho" class="lista-carrinho">
-            <div class="empty-cart-msg">Seu carrinho está vazio.</div>
-        </div>
+    <div class="shop">
+        <section aria-labelledby="titulo-menu">
+            <h2 id="titulo-menu" class="sr-only">Itens disponíveis</h2>
+            <div class="menu">
+                {% for item in cardapio_hoje %}
+                <article class="dish">
+                    {% if item.prato.foto_url %}
+                    <div class="dish-photo">
+                        <img src="{{ item.prato.foto_url }}" alt="{{ item.prato.nome_prato }}" loading="lazy">
+                    </div>
+                    {% else %}
+                    <div class="dish-photo is-empty" aria-hidden="true">
+                        <svg viewBox="0 0 60 78"><path d="M2 0h13v8h8V0h14v8h8V0h13v21h-6v38l6 17H2l6-17V21H2z"/></svg>
+                    </div>
+                    {% endif %}
 
-        <div id="resumo-valores" style="border-top: 1px solid #333; margin-top: 15px; padding-top: 10px;">
-            <div class="carrinho-subtotal" style="display: flex; justify-content: space-between; color: #aaa; margin-bottom: 5px;">
-                <span>Subtotal Itens:</span>
-                <span id="subtotal-carrinho">R$ 0.00</span>
+                    <div class="dish-body">
+                        <h3>{{ item.prato.nome_prato }}</h3>
+                        {% if item.descricao_dia %}<p class="dish-desc">{{ item.descricao_dia }}</p>{% endif %}
+                    </div>
+
+                    <ul class="sizes">
+                        {% for tam in tamanhos %}
+                        <li class="size">
+                            <span class="size-name">{{ tam.nome }}</span>
+                            <span class="size-leader" aria-hidden="true"></span>
+                            <span class="price">R$ {{ "%.2f"|format(tam.preco)|replace('.', ',') }}</span>
+                            <button type="button" class="add-btn btn-add-item"
+                                data-prato-id="{{ item.prato.id }}"
+                                data-prato-nome="{{ item.prato.nome_prato }}"
+                                data-tamanho-id="{{ tam.id }}"
+                                data-tamanho-nome="{{ tam.nome }}"
+                                data-preco="{{ tam.preco }}"
+                                aria-label="Adicionar {{ item.prato.nome_prato }} ({{ tam.nome }})"
+                                {% if not loja_aberta %}disabled title="Estamos fechados no momento"{% endif %}>
+                                {{ icon('plus') }}
+                            </button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </article>
+                {% else %}
+                <div class="empty">
+                    <h3>O cardápio está sendo montado</h3>
+                    <p class="mt-0">Os lanches do dia aparecem aqui em instantes. Volte daqui a pouco.</p>
+                </div>
+                {% endfor %}
             </div>
-            <div id="linha-taxa-entrega" style="display: none; justify-content: space-between; color: #aaa; margin-bottom: 8px;">
-                <span>Taxa de Entrega:</span>
-                <span id="valor-taxa-entrega" style="color: #2ecc71;">R$ {{ "%.2f"|format(taxa_entrega_padrao) }}</span>
+        </section>
+
+        <aside class="order" id="carrinho-panel" aria-labelledby="titulo-pedido">
+            <div class="order-head">
+                <h2 id="titulo-pedido">Seu pedido</h2>
+                <span id="cart-badge" class="order-count" aria-label="Itens no pedido">0</span>
             </div>
-            <div class="carrinho-total" style="display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; color: var(--primary);">
-                <span>Total:</span>
-                <span id="total-carrinho">R$ 0.00</span>
+
+            <ul id="lista-carrinho" class="order-items" aria-live="polite">
+                <li class="order-empty">{{ icon('bag') }}Nenhum item ainda.<br>Toque no <strong>+</strong> para adicionar.</li>
+            </ul>
+
+            <div class="order-summary">
+                <div class="sum-row"><span>Subtotal</span><span id="subtotal-carrinho" class="num">R$ 0,00</span></div>
+                <div class="sum-row" id="linha-taxa-entrega" hidden><span>Taxa de entrega</span><span id="valor-taxa-entrega" class="num">R$ {{ "%.2f"|format(taxa_entrega_padrao)|replace('.', ',') }}</span></div>
+                <div class="sum-row total"><span>Total</span><span id="total-carrinho" class="price">R$ 0,00</span></div>
+                <div class="order-clear"><button type="button" id="clear-cart-btn" class="btn btn-text btn-sm">Limpar pedido</button></div>
             </div>
-        </div>
 
-        <button type="button" id="clear-cart-btn" class="btn-text-danger" style="margin-top: 10px;">Limpar Carrinho</button>
-        
-        <div id="checkout-section">
-            <form id="form-pedido" class="modern-form">
-                <div class="form-group">
-                    <input type="text" id="nome_cliente" name="nome_cliente" placeholder="Seu Nome Completo" required {% if cliente %}value="{{ cliente.nome }}"{% endif %}>
-                </div>
-                <div class="form-group">
-                    <input type="tel" id="telefone_cliente" name="telefone_cliente" placeholder="Seu WhatsApp (ex: 31999999999)" required {% if cliente %}value="{{ cliente.telefone }}"{% endif %}>
-                </div>
-                
-                <div class="delivery-toggle">
-                    <label class="radio-card">
-                        <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" {% if not cliente or cliente.preferencia_entrega != 'ENTREGA' %}checked{% endif %}>
-                        <span class="radio-label">Vou Retirar</span>
-                    </label>
-                    <label class="radio-card">
-                        <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}checked{% endif %}>
-                        <span class="radio-label">Entrega</span>
-                    </label>
-                </div>
-                
-                <div class="form-group" id="campo_endereco" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
-                    <input type="text" id="endereco_cliente" name="endereco_cliente" placeholder="Endereço Completo com Bairro" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
+            <form id="form-pedido" class="order-form" novalidate>
+                {% if not loja_aberta %}
+                <div class="closed-note">{{ icon('clock') }}<span>{{ mensagem_loja_fechada }}</span></div>
+                {% endif %}
+
+                <div class="group">
+                    <p class="section-label">Seus dados</p>
+                    <div class="field">
+                        <label class="label" for="nome_cliente">Nome</label>
+                        <input class="input" type="text" id="nome_cliente" name="nome_cliente" autocomplete="name" required {% if cliente %}value="{{ cliente.nome }}"{% endif %}>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="telefone_cliente">WhatsApp</label>
+                        <input class="input" type="tel" id="telefone_cliente" name="telefone_cliente" inputmode="tel" autocomplete="tel" placeholder="(31) 99999-9999" required {% if cliente %}value="{{ cliente.telefone }}"{% endif %}>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="observacoes" style="display:block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: #ddd;">Observações do Pedido (Opcional):</label>
-                    <textarea id="observacoes" name="observacoes" rows="2" placeholder="Ex: Sem cebola, ponto da carne, caprichar na batata palha, interfone 302..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 0.95rem; resize: vertical; box-sizing: border-box;"></textarea>
+                <div class="group">
+                    <p class="section-label">Como você quer receber</p>
+                    <div class="segmented" role="radiogroup" aria-label="Tipo de pedido">
+                        <label>
+                            <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" {% if not cliente or cliente.preferencia_entrega != 'ENTREGA' %}checked{% endif %}>
+                            <span>{{ icon('walk') }}Retirar</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}checked{% endif %}>
+                            <span>{{ icon('bike') }}Entrega</span>
+                        </label>
+                    </div>
+                    <div class="field" id="campo_endereco" style="margin-top: 14px;" {% if not (cliente and cliente.preferencia_entrega == 'ENTREGA') %}hidden{% endif %}>
+                        <label class="label" for="endereco_cliente">Endereço completo</label>
+                        <input class="input" type="text" id="endereco_cliente" name="endereco_cliente" autocomplete="street-address" placeholder="Rua, número, bairro e complemento" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="forma_pagamento" style="display:block; margin-bottom: 5px; font-weight: 600;">Forma de Pagamento:</label>
-                    <select id="forma_pagamento" name="forma_pagamento" class="form-control" required style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 1rem;">
-                        <option value="" disabled selected>Selecione...</option>
-                        <option value="DINHEIRO">Dinheiro</option>
-                        <option value="PIX">PIX</option>
-                        <option value="DEBITO">Cartão de Débito</option>
-                        <option value="CREDITO">Cartão de Crédito</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="campo_troco" style="display: none;">
-                    <input type="text" id="troco_para" name="troco_para" placeholder="Troco para quanto? (Ex: R$ 50)">
+                <div class="group">
+                    <p class="section-label">Pagamento</p>
+                    <div class="field">
+                        <label class="label" for="forma_pagamento">Forma de pagamento</label>
+                        <select class="select" id="forma_pagamento" name="forma_pagamento" required>
+                            <option value="" disabled selected>Escolha uma opção</option>
+                            <option value="PIX">Pix</option>
+                            <option value="DINHEIRO">Dinheiro</option>
+                            <option value="DEBITO">Cartão de débito</option>
+                            <option value="CREDITO">Cartão de crédito</option>
+                        </select>
+                    </div>
+                    <div class="field" id="campo_troco" hidden>
+                        <label class="label" for="troco_para">Troco para <span class="opt">(opcional)</span></label>
+                        <input class="input" type="text" id="troco_para" name="troco_para" inputmode="decimal" placeholder="Ex: 50,00">
+                    </div>
+                    <div class="field">
+                        <label class="label" for="observacoes">Observações <span class="opt">(opcional)</span></label>
+                        <textarea class="textarea" id="observacoes" name="observacoes" rows="2" placeholder="Sem cebola, molho à parte, interfone 302…"></textarea>
+                    </div>
                 </div>
 
                 {% if loja_aberta %}
-                <button type="submit" id="btn-finalizar" class="btn-primary-large">Finalizar Pedido</button>
+                <button type="submit" id="btn-finalizar" class="btn btn-primary btn-lg btn-block">Finalizar pedido</button>
                 {% else %}
-                <button type="button" disabled class="btn-primary-large" style="opacity: 0.6; cursor: not-allowed; background: #666;">Restaurante Fechado</button>
+                <button type="button" class="btn btn-lg btn-block" disabled>Fechado no momento</button>
                 {% endif %}
             </form>
-        </div>
+        </aside>
     </div>
-</div>
+</main>
 
-<!-- Modal de Sucesso / WhatsApp -->
-<div id="success-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <div class="success-icon">✓</div>
-        <h2>Pedido Confirmado!</h2>
-        <p>Seu pedido (#<span id="modal-pedido-id"></span>) foi registrado com sucesso em nosso sistema.</p>
-        <p>Para agilizar o atendimento, envie os detalhes para o nosso WhatsApp com 1 clique:</p>
-        
-        <a href="#" id="btn-whatsapp" class="btn-whatsapp" target="_blank">
-            📲 Enviar para o WhatsApp
-        </a>
-        <button id="btn-close-modal" class="btn-secondary" style="margin-top: 15px;">Fechar</button>
+<button type="button" class="cart-bar" id="cart-bar" aria-controls="carrinho-panel">
+    <span><span id="cart-bar-count">0</span> item(ns) · Ver pedido</span>
+    <span class="price" id="cart-bar-total">R$ 0,00</span>
+</button>
+
+<div id="success-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-sucesso">
+    <div class="modal-box" style="text-align: center;">
+        <div class="modal-body">
+            <span class="success-mark">{{ icon('check') }}</span>
+            <h2 id="titulo-sucesso">Pedido recebido!</h2>
+            <div class="order-number">Nº <span id="modal-pedido-id"></span></div>
+            <p class="muted mt-0">Já estamos preparando. Para agilizar, envie o resumo para o nosso WhatsApp.</p>
+        </div>
+        <div class="modal-foot">
+            <a href="#" id="btn-whatsapp" class="btn btn-light btn-block btn-whatsapp" target="_blank" rel="noopener">
+                {{ icon('whatsapp') }}Enviar no WhatsApp
+            </a>
+            <button type="button" id="btn-close-modal" class="btn btn-ghost btn-block">Fechar</button>
+        </div>
     </div>
 </div>
 {% endblock %}

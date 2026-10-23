@@ -1,32 +1,51 @@
+{% from 'partials/_ui.html' import logo, icon %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Admin Restaurante</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#0A0A0A">
+    <title>Acesso Administrativo — Dogão do Castelo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="login-body">
-    <div class="login-container">
-        <h2>Acesso Administrativo</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flashes" style="list-style: none; padding: 0; margin-bottom: 15px;">
-                {% for category, message in messages %}
-                    <li style="color: {% if category == 'error' %}#e74c3c{% else %}#2ecc71{% endif %}; margin-bottom: 5px;">{{ message }}</li>
-                {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-        <form method="POST" action="{{ url_for('admin_login') }}" class="modern-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-group">
-                <label for="senha">Senha de Acesso:</label>
-                <input type="password" id="senha" name="senha" required autofocus placeholder="Digite sua senha">
+<body>
+    {% include 'partials/_icons.html' %}
+
+    <div class="admin-login-wrap">
+        <div class="admin-login-box">
+            <div style="text-align: center; margin-bottom: 24px;">
+                {{ logo(size='lg') }}
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar no Painel</button>
-        </form>
+
+            <p class="eyebrow" style="text-align: center; margin-bottom: 4px;">Painel de Controle</p>
+            <h1 style="text-align: center; margin-bottom: 8px; font-size: 2.2rem;">Acesso Restrito</h1>
+            <p class="muted" style="text-align: center; margin-top: 0; font-size: 0.9rem;">Área exclusiva para gestão da lanchonete.</p>
+
+            {% include 'partials/_flash.html' %}
+
+            <form method="POST" action="{{ url_for('admin_login') }}" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="field">
+                    <label class="label" for="senha">Senha de Administrador</label>
+                    <input class="input" type="password" id="senha" name="senha" required autofocus placeholder="Digite sua senha" autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px;">
+                    Entrar no Painel
+                </button>
+            </form>
+
+            <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); text-align: center;">
+                <a href="{{ url_for('cardapio') }}" class="subtle" style="text-decoration: none; font-size: 0.85rem;">
+                    ← Voltar ao cardápio público
+                </a>
+            </div>
+        </div>
     </div>
 </body>
 </html>

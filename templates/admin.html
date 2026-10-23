@@ -1,59 +1,105 @@
 {% extends 'base_admin.html' %}
+{% from 'partials/_ui.html' import icon %}
 
-{% block title %}Painel Admin - Tamanhos{% endblock %}
+{% block title %}Tamanhos & Preços — Painel Admin{% endblock %}
 
 {% block content %}
-<header>
-    <h1>Gerenciar Tamanhos</h1>
-</header>
-
-<section class="card form-section">
-    <h2>Cadastrar Novo Tamanho</h2>
-    <form action="{{ url_for('add_tamanho') }}" method="POST" class="modern-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form-group">
-            <label for="nome">Nome do Tamanho (ex: Pequeno, Tradicional, Especial):</label>
-            <input type="text" id="nome" name="nome" required>
-        </div>
-        <div class="form-group">
-            <label for="preco">Preço (ex: 20.00):</label>
-            <input type="number" step="0.01" id="preco" name="preco" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Salvar Tamanho</button>
-    </form>
-</section>
-
-<section class="card list-section">
-    <h2>Tamanhos Cadastrados</h2>
-    <div class="table-responsive">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Preço</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tam in tamanhos %}
-                <tr>
-                    <td><strong>{{ tam.nome }}</strong></td>
-                    <td>R$ {{ "%.2f"|format(tam.preco) }}</td>
-                    <td>
-                        <div class="actions-flex">
-                            <a href="{{ url_for('edit_tamanho', tamanho_id=tam.id) }}" class="btn btn-secondary btn-sm">Editar</a>
-                            <form action="{{ url_for('delete_tamanho', tamanho_id=tam.id) }}" method="POST" style="margin:0;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza?');">Excluir</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="3" class="text-center">Nenhum tamanho cadastrado ainda.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<div class="admin-header">
+    <div>
+        <p class="eyebrow">Tabela de Preços</p>
+        <h1>Tamanhos & Preços</h1>
+        <p>Defina as variações de tamanho das refeições e seus respectivos valores de venda.</p>
     </div>
-</section>
+</div>
+
+<div class="admin-grid-2">
+    <!-- Cadastrar Novo Tamanho -->
+    <section class="card">
+        <div class="card-title">
+            <h2>Cadastrar Novo Tamanho</h2>
+        </div>
+
+        <form action="{{ url_for('add_tamanho') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="field">
+                <label class="label" for="nome">Nome do Tamanho</label>
+                <input class="input" type="text" id="nome" name="nome" placeholder="Ex: Tradicional, Especial, Grande" required>
+                <span class="hint">Identificador que aparece para o cliente na escolha do item.</span>
+            </div>
+
+            <div class="field">
+                <label class="label" for="preco">Preço Unitário (R$)</label>
+                <input class="input num" type="number" step="0.01" min="0" id="preco" name="preco" placeholder="0.00" required>
+                <span class="hint">Preço base cobrado para este tamanho.</span>
+            </div>
+
+            <div style="margin-top: 24px;">
+                <button type="submit" class="btn btn-primary">
+                    {{ icon('plus') }}
+                    <span>Salvar Tamanho</span>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Lista de Tamanhos -->
+    <section class="card" style="padding: 0; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 12px;">
+            <div class="row">
+                <h2 style="font-size: 1.5rem; margin: 0;">Tamanhos Ativos</h2>
+                <span class="tag tag-yellow-outline num">{{ tamanhos|length }} variações</span>
+            </div>
+        </div>
+
+        <div class="table-responsive" style="border: 0; border-radius: 0;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Preço</th>
+                        <th style="text-align: right;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tam in tamanhos %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--white); font-size: 1rem;">{{ tam.nome }}</strong>
+                            <span class="subtle" style="font-size: 0.75rem; display: block;">ID #{{ tam.id }}</span>
+                        </td>
+                        <td>
+                            <span class="price" style="font-size: 1.3rem;">R$ {{ "%.2f"|format(tam.preco)|replace('.', ',') }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="actions-flex" style="justify-content: flex-end;">
+                                <a href="{{ url_for('edit_tamanho', tamanho_id=tam.id) }}" class="btn btn-ghost btn-sm" title="Editar tamanho">
+                                    {{ icon('edit') }}
+                                    <span>Editar</span>
+                                </a>
+                                <form action="{{ url_for('delete_tamanho', tamanho_id=tam.id) }}" method="POST" style="margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger btn-sm" title="Excluir tamanho" onclick="return confirm('Tem certeza que deseja excluir o tamanho &quot;{{ tam.nome }}&quot;?');">
+                                        {{ icon('trash') }}
+                                        <span>Excluir</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 48px 20px; color: var(--text-3);">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                                <span style="font-size: 1rem; color: var(--text-2); font-weight: 600;">Nenhum tamanho cadastrado ainda</span>
+                                <span style="font-size: 0.85rem;">Cadastre ao menos um tamanho para que os clientes possam fazer pedidos.</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
 {% endblock %}

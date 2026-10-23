@@ -1,54 +1,73 @@
+{% from 'partials/_ui.html' import logo, icon %}
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0A0A0A">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}Painel Admin{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>{% block title %}Painel Admin — Dogão do Castelo{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <div class="admin-dashboard">
-        <aside class="sidebar">
-            <h2 class="sidebar-title">Painel Admin</h2>
-            <div style="padding: 0 15px 15px 15px;">
+    {% include 'partials/_icons.html' %}
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                {{ logo(href=url_for('admin_pedidos')) }}
+            </div>
+
+            <div class="sidebar-status">
+                <span class="subtle" style="font-size: 0.76rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">Status da Loja</span>
                 {% if loja_aberta %}
-                    <span style="display: inline-block; background: rgba(39, 174, 96, 0.2); color: #2ecc71; border: 1px solid #27ae60; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
-                        🟢 LOJA ABERTA
-                    </span>
+                    <span class="tag tag-yellow">Aberta</span>
                 {% else %}
-                    <span style="display: inline-block; background: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #c0392b; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
-                        🔴 LOJA FECHADA
-                    </span>
+                    <span class="tag tag-red">Fechada</span>
                 {% endif %}
             </div>
-            <nav>
-                <a href="{{ url_for('admin_pedidos') }}" {% if request.endpoint == 'admin_pedidos' %}class="active"{% endif %}>🔔 Pedidos</a>
-                <a href="{{ url_for('admin_cardapio') }}" {% if request.endpoint == 'admin_cardapio' %}class="active"{% endif %}>📋 Cardápio do Dia</a>
-                <a href="{{ url_for('admin_pratos') }}" {% if request.endpoint in ['admin_pratos', 'edit_prato'] %}class="active"{% endif %}>🍔 Pratos</a>
-                <a href="{{ url_for('admin') }}" {% if request.endpoint in ['admin', 'edit_tamanho'] %}class="active"{% endif %}>📏 Tamanhos</a>
-                <a href="{{ url_for('admin_configuracoes') }}" {% if request.endpoint == 'admin_configuracoes' %}class="active"{% endif %}>
-                    ⚙️ Configurações {% if deve_trocar_senha %}<span style="color: #e74c3c; font-weight: bold;">(Ação Requerida)</span>{% endif %}
+
+            <nav class="admin-nav" aria-label="Navegação administrativa">
+                <a href="{{ url_for('admin_pedidos') }}" {% if request.endpoint == 'admin_pedidos' %}class="active"{% endif %}>
+                    {{ icon('receipt') }}<span>Pedidos</span>
                 </a>
-                <a href="{{ url_for('cardapio') }}" target="_blank" style="color: #aaa;">📱 Ver Cardápio Público ↗</a>
-                <a href="{{ url_for('admin_logout') }}" class="logout-link">Sair</a>
+                <a href="{{ url_for('admin_cardapio') }}" {% if request.endpoint == 'admin_cardapio' %}class="active"{% endif %}>
+                    {{ icon('menu-board') }}<span>Cardápio do Dia</span>
+                </a>
+                <a href="{{ url_for('admin_pratos') }}" {% if request.endpoint in ['admin_pratos', 'edit_prato'] %}class="active"{% endif %}>
+                    {{ icon('list') }}<span>Pratos do Catálogo</span>
+                </a>
+                <a href="{{ url_for('admin') }}" {% if request.endpoint in ['admin', 'edit_tamanho'] %}class="active"{% endif %}>
+                    {{ icon('ruler') }}<span>Tamanhos</span>
+                </a>
+                <a href="{{ url_for('admin_configuracoes') }}" {% if request.endpoint == 'admin_configuracoes' %}class="active"{% endif %}>
+                    {{ icon('settings') }}<span>Configurações</span>
+                    {% if deve_trocar_senha %}
+                        <span class="tag tag-red" style="margin-left: auto; font-size: 0.65rem;">Ação</span>
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('cardapio') }}" target="_blank" rel="noopener" style="margin-top: 10px; color: var(--text-3);">
+                    {{ icon('external') }}<span>Ver Cardápio Público</span>
+                </a>
+                <a href="{{ url_for('admin_logout') }}" class="nav-out">
+                    {{ icon('logout') }}<span>Encerrar Sessão</span>
+                </a>
             </nav>
         </aside>
-        
-        <main class="main-content">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert-flash alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
+
+        <!-- Área Principal -->
+        <main class="admin-main">
+            {% include 'partials/_flash.html' %}
             {% block content %}{% endblock %}
         </main>
     </div>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

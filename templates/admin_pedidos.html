@@ -1,71 +1,84 @@
 {% extends 'base_admin.html' %}
+{% from 'partials/_ui.html' import icon %}
 
-{% block title %}Painel de Pedidos - Admin{% endblock %}
+{% block title %}Gestão de Pedidos — Dogão do Castelo{% endblock %}
 
 {% block content %}
-<header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+<div class="admin-header">
     <div>
-        <h1 style="margin: 0;">Gestão de Pedidos</h1>
-        <p style="margin: 5px 0 0 0; color: #aaa;">Monitore pedidos em tempo real com alertas sonoros e impressão automática.</p>
+        <p class="eyebrow">Operação em tempo real</p>
+        <h1>Gestão de Pedidos</h1>
+        <p>Acompanhamento ao vivo de comandas, impressão automática e status de entrega.</p>
     </div>
-    
-    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-        <!-- Botão de controle de som -->
-        <button id="btn-toggle-sound" class="btn btn-secondary" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
-            <span id="sound-icon">🔊</span> <span id="sound-text">Som Ativado</span>
+
+    <div class="row wrap" style="gap: 12px;">
+        <button id="btn-toggle-sound" class="btn btn-ghost" type="button" aria-pressed="true">
+            <span id="sound-icon">{{ icon('volume') }}</span>
+            <span id="sound-text">Som Ativado</span>
         </button>
 
-        <form action="{{ url_for('admin_pedidos') }}" method="GET" style="display: flex; gap: 8px; margin: 0; align-items: center;">
-            <input type="date" id="data" name="data" value="{{ data_filtro }}" style="padding: 7px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff;">
-            <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
-            <a href="{{ url_for('admin_pedidos') }}" class="btn btn-secondary btn-sm">Hoje</a>
+        <form action="{{ url_for('admin_pedidos') }}" method="GET" class="row" style="margin: 0;">
+            <input class="input" type="date" id="data" name="data" value="{{ data_filtro }}" style="min-height: 40px; padding: 8px 12px; width: auto;">
+            <button type="submit" class="btn btn-ghost btn-sm">Filtrar</button>
+            <a href="{{ url_for('admin_pedidos') }}" class="btn btn-ghost btn-sm">Hoje</a>
         </form>
     </div>
-</header>
+</div>
 
-<section class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <h2 style="margin: 0; font-size: 1.3rem;">Lista de Pedidos ({{ pedidos|length }})</h2>
-        <small style="color: #2ecc71; display: flex; align-items: center; gap: 5px;">
-            <span style="display: inline-block; width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
-            Atualização em tempo real ativa
-        </small>
+<section class="card" style="padding: 0; overflow: hidden;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 12px;">
+        <div class="row">
+            <h2 style="font-size: 1.5rem; margin: 0;">Pedidos do Dia</h2>
+            <span class="tag tag-yellow-outline num">{{ pedidos|length }} total</span>
+        </div>
+        <div class="row subtle" style="font-size: 0.8rem; font-weight: 600;">
+            <span class="tag tag-yellow" style="padding: 2px 6px; font-size: 0.68rem;">LIVE</span>
+            <span>Atualização automática a cada 10s</span>
+        </div>
     </div>
 
-    <div class="table-responsive">
+    <div class="table-responsive" style="border: 0; border-radius: 0;">
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Data</th>
+                    <th>Nº</th>
+                    <th>Horário</th>
                     <th>Cliente</th>
-                    <th>Tipo / Endereço</th>
+                    <th>Tipo / Destino</th>
                     <th>Pagamento</th>
                     <th>Total</th>
                     <th>Status</th>
                     <th>Comanda</th>
-                    <th>Ações</th>
+                    <th style="text-align: right;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for pedido in pedidos %}
-                <tr id="pedido-row-{{ pedido.id }}" {% if pedido.status_pedido == 'PENDENTE' %}style="background: rgba(243, 156, 18, 0.08);"{% endif %}>
-                    <td><strong>#{{ pedido.id }}</strong></td>
-                    <td>{{ pedido.data_hora.strftime('%d/%m %H:%M') }}</td>
+                <tr id="pedido-row-{{ pedido.id }}" {% if pedido.status_pedido == 'PENDENTE' %}style="background: var(--yellow-soft);"{% endif %}>
                     <td>
-                        <strong>{{ pedido.nome_cliente }}</strong><br>
-                        <small style="color: #aaa;">{{ pedido.telefone_cliente or 'N/A' }}</small>
+                        <strong class="num" style="color: var(--yellow); font-family: var(--font-display); font-size: 1.3rem;">#{{ pedido.id }}</strong>
+                    </td>
+                    <td class="subtle num">
+                        {{ pedido.data_hora.strftime('%d/%m %H:%M') }}
                     </td>
                     <td>
-                        <span class="badge badge-secondary">{{ pedido.tipo_pedido }}</span>
+                        <strong style="color: var(--white); display: block;">{{ pedido.nome_cliente }}</strong>
+                        <small class="subtle num">{{ pedido.telefone_cliente or 'Não informado' }}</small>
+                    </td>
+                    <td>
+                        <span class="tag {{ 'tag-white' if pedido.tipo_pedido == 'ENTREGA' else 'tag-muted' }}">
+                            {{ pedido.tipo_pedido }}
+                        </span>
                         {% if pedido.tipo_pedido == 'ENTREGA' and pedido.endereco_cliente %}
-                            <br><small style="color: #ccc; max-width: 200px; display: inline-block; word-break: break-word;">📍 {{ pedido.endereco_cliente }}</small>
+                            <small class="subtle" style="display: block; margin-top: 4px; max-width: 220px; word-break: break-word;">
+                                📍 {{ pedido.endereco_cliente }}
+                            </small>
                         {% endif %}
                     </td>
                     <td>
-                        <small><strong>{{ pedido.forma_pagamento or 'N/A' }}</strong></small>
+                        <strong style="color: var(--text-2); font-size: 0.85rem;">{{ pedido.forma_pagamento or 'N/A' }}</strong>
                         {% if pedido.forma_pagamento == 'DINHEIRO' and pedido.troco_para %}
-                            <br><small class="text-muted">Troco: {{ pedido.troco_para }}</small>
+                            <small class="subtle" style="display: block;">Troco: {{ pedido.troco_para }}</small>
                         {% endif %}
                     </td>
                     <td>
@@ -74,15 +87,15 @@
                             {% set ns.total = ns.total + (item.preco_unitario_pago * item.quantidade) %}
                         {% endfor %}
                         {% set total_final = ns.total + (pedido.taxa_entrega if pedido.tipo_pedido == 'ENTREGA' else 0.0) %}
-                        <strong>R$ {{ "%.2f"|format(total_final) }}</strong>
+                        <strong class="price" style="font-size: 1.3rem;">R$ {{ "%.2f"|format(total_final)|replace('.', ',') }}</strong>
                         {% if pedido.tipo_pedido == 'ENTREGA' and pedido.taxa_entrega > 0 %}
-                            <br><small style="color: #888;">(+R$ {{ "%.2f"|format(pedido.taxa_entrega) }} frete)</small>
+                            <small class="subtle" style="display: block; font-size: 0.75rem;">(+R$ {{ "%.2f"|format(pedido.taxa_entrega)|replace('.', ',') }} frete)</small>
                         {% endif %}
                     </td>
                     <td>
-                        <form action="{{ url_for('atualizar_pedido', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
+                        <form action="{{ url_for('atualizar_pedido', pedido_id=pedido.id) }}" method="POST" class="inline-form">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <select name="status" onchange="this.form.submit()" class="status-select status-{{ pedido.status_pedido|lower|replace(' ', '-') }}">
+                            <select name="status" onchange="this.form.submit()" class="status-select">
                                 <option value="PENDENTE" {% if pedido.status_pedido == 'PENDENTE' %}selected{% endif %}>Pendente</option>
                                 <option value="EM PREPARO" {% if pedido.status_pedido == 'EM PREPARO' %}selected{% endif %}>Em Preparo</option>
                                 <option value="PRONTO PARA RETIRADA" {% if pedido.status_pedido == 'PRONTO PARA RETIRADA' %}selected{% endif %}>Pronto Retirada</option>
@@ -94,28 +107,36 @@
                     </td>
                     <td>
                         {% if pedido.impresso %}
-                            <span class="badge" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #27ae60;">✓ Impresso</span>
+                            <span class="tag tag-white-outline">Impresso</span>
                         {% else %}
-                            <span class="badge" style="background: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid #f39c12;">⏳ Na Fila</span>
+                            <span class="tag tag-yellow">Na Fila</span>
                         {% endif %}
                     </td>
                     <td>
-                        <div class="actions-flex" style="display: flex; gap: 5px;">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalDetalhes('{{ pedido.id }}', '{{ pedido.nome_cliente|escape }}', '{{ pedido.tipo_pedido }}', '{{ (pedido.endereco_cliente or '')|escape }}', '{{ (pedido.observacoes or '')|escape }}', '{{ (pedido.forma_pagamento or '')|escape }}', '{{ (pedido.troco_para or '')|escape }}', [
+                        <div class="actions-flex" style="justify-content: flex-end;">
+                            <button type="button" class="btn btn-ghost btn-sm" onclick="abrirModalDetalhes('{{ pedido.id }}', '{{ pedido.nome_cliente|escape }}', '{{ pedido.tipo_pedido }}', '{{ (pedido.endereco_cliente or '')|escape }}', '{{ (pedido.observacoes or '')|escape }}', '{{ (pedido.forma_pagamento or '')|escape }}', '{{ (pedido.troco_para or '')|escape }}', [
                                 {% for item in pedido.itens %}
                                     { qtd: {{ item.quantidade }}, prato: '{{ item.prato.nome_prato|escape }}', tam: '{{ item.tamanho.nome|escape }}', preco: {{ item.preco_unitario_pago }} },
                                 {% endfor %}
-                            ], {{ pedido.taxa_entrega if pedido.tipo_pedido == 'ENTREGA' else 0.0 }})">👁️ Ver</button>
+                            ], {{ pedido.taxa_entrega if pedido.tipo_pedido == 'ENTREGA' else 0.0 }})" title="Ver detalhes">
+                                {{ icon('eye') }}
+                            </button>
 
-                            <form action="{{ url_for('imprimir_pedido_admin', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
+                            <form action="{{ url_for('imprimir_pedido_admin', pedido_id=pedido.id) }}" method="POST" class="inline-form">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-primary btn-sm" title="Reenviar comanda para a impressora">🖨️ Imprimir</button>
+                                <button type="submit" class="btn btn-primary btn-sm" title="Reenviar comanda para a impressora">
+                                    {{ icon('printer') }}<span>Imprimir</span>
+                                </button>
                             </form>
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="9" class="text-center" style="padding: 30px; color: #888;">Nenhum pedido encontrado para a data selecionada.</td></tr>
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 48px 20px; color: var(--text-3);">
+                        Nenhum pedido registrado para a data selecionada.
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -123,26 +144,20 @@
 </section>
 
 <!-- Modal de Detalhes do Pedido -->
-<div id="modal-detalhes-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
-    <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 10px; max-width: 500px; width: 100%; padding: 25px; max-height: 90vh; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px;">
-            <h2 id="modal-titulo" style="margin: 0; color: var(--primary);">Detalhes do Pedido</h2>
-            <button onclick="fecharModalDetalhes()" style="background: transparent; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer;">&times;</button>
+<div id="modal-detalhes-overlay" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2 id="modal-titulo" style="font-size: 1.6rem; color: var(--yellow);">Detalhes do Pedido</h2>
+            <button type="button" class="icon-btn" onclick="fecharModalDetalhes()" aria-label="Fechar modal">
+                {{ icon('x') }}
+            </button>
         </div>
-
-        <div id="modal-conteudo"></div>
-
-        <button onclick="fecharModalDetalhes()" class="btn btn-secondary" style="width: 100%; margin-top: 20px;">Fechar</button>
+        <div id="modal-conteudo" class="modal-body"></div>
+        <div class="modal-foot">
+            <button type="button" class="btn btn-ghost btn-block" onclick="fecharModalDetalhes()">Fechar</button>
+        </div>
     </div>
 </div>
-
-<style>
-@keyframes pulse {
-    0% { transform: scale(0.95); opacity: 0.7; }
-    50% { transform: scale(1.15); opacity: 1; }
-    100% { transform: scale(0.95); opacity: 0.7; }
-}
-</style>
 {% endblock %}
 
 {% block scripts %}
@@ -155,13 +170,15 @@
 
     function atualizarVisualSom() {
         if (somHabilitado) {
-            soundIcon.textContent = '🔊';
+            soundIcon.innerHTML = `<svg class="icon"><use href="#i-volume"></use></svg>`;
             soundText.textContent = 'Som Ativado';
-            btnToggleSound.style.borderColor = '#2ecc71';
+            btnToggleSound.style.borderColor = 'var(--yellow)';
+            btnToggleSound.style.color = 'var(--yellow)';
         } else {
-            soundIcon.textContent = '🔇';
+            soundIcon.innerHTML = `<svg class="icon"><use href="#i-volume-off"></use></svg>`;
             soundText.textContent = 'Som Mutado';
-            btnToggleSound.style.borderColor = '#e74c3c';
+            btnToggleSound.style.borderColor = 'var(--line-strong)';
+            btnToggleSound.style.color = 'var(--text-3)';
         }
     }
 
@@ -187,7 +204,7 @@
             const gain = ctx.createGain();
 
             osc.type = 'sine';
-            // Tom de sino duplo agradável (880Hz -> 1320Hz)
+            // Sino duplo límpido (880Hz -> 1320Hz)
             osc.frequency.setValueAtTime(880, ctx.currentTime);
             osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.15);
 
@@ -205,15 +222,34 @@
     }
 
     // --- Modal de Detalhes ---
+    const modalOverlay = document.getElementById('modal-detalhes-overlay');
+
     function abrirModalDetalhes(id, cliente, tipo, endereco, observacoes, pagamento, troco, itens, taxaEntrega) {
-        document.getElementById('modal-titulo').innerText = `Pedido #${id} - ${cliente}`;
+        document.getElementById('modal-titulo').innerText = `Pedido #${id} — ${cliente}`;
         let html = `
-            <p><strong>Tipo:</strong> ${tipo}</p>
-            ${endereco ? `<p><strong>Endereço:</strong> ${endereco}</p>` : ''}
-            <p><strong>Pagamento:</strong> ${pagamento} ${troco ? `(Troco para: ${troco})` : ''}</p>
-            ${observacoes ? `<div style="background: rgba(243, 156, 18, 0.15); border-left: 3px solid #f39c12; padding: 10px; border-radius: 4px; margin: 10px 0;"><strong>⚠️ Observações do Cliente:</strong><br>${observacoes}</div>` : ''}
-            <h4 style="margin-top: 15px; border-bottom: 1px solid #333; padding-bottom: 5px;">Itens:</h4>
-            <ul style="list-style: none; padding: 0;">
+            <div class="stack">
+                <div class="row-between" style="border-bottom: 1px solid var(--line); padding-bottom: 10px;">
+                    <span class="subtle">Tipo:</span>
+                    <span class="tag tag-white">${tipo}</span>
+                </div>
+                ${endereco ? `
+                <div style="border-bottom: 1px solid var(--line); padding-bottom: 10px;">
+                    <span class="subtle" style="display:block; font-size: 0.8rem; margin-bottom: 4px;">Endereço:</span>
+                    <strong>${endereco}</strong>
+                </div>` : ''}
+                <div class="row-between" style="border-bottom: 1px solid var(--line); padding-bottom: 10px;">
+                    <span class="subtle">Pagamento:</span>
+                    <strong>${pagamento} ${troco ? `(Troco para: ${troco})` : ''}</strong>
+                </div>
+                ${observacoes ? `
+                <div style="background: var(--yellow-soft); border-left: 3px solid var(--yellow); padding: 12px; border-radius: var(--r-sm);">
+                    <strong style="color: var(--yellow); font-size: 0.85rem; display: block; margin-bottom: 4px;">OBSERVAÇÕES DO CLIENTE:</strong>
+                    <span style="color: var(--white);">${observacoes}</span>
+                </div>` : ''}
+
+                <div style="margin-top: 14px;">
+                    <p class="eyebrow" style="margin-bottom: 8px;">Itens do Pedido</p>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
         `;
 
         let subtotal = 0;
@@ -221,38 +257,48 @@
             const itemTotal = item.qtd * item.preco;
             subtotal += itemTotal;
             html += `
-                <li style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222;">
-                    <span><strong>${item.qtd}x</strong> ${item.prato} (${item.tam})</span>
-                    <span>R$ ${itemTotal.toFixed(2)}</span>
+                <li style="display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 0.92rem;">
+                    <span><strong>${item.qtd}x</strong> ${item.prato} <small class="subtle">(${item.tam})</small></span>
+                    <span class="num">R$ ${itemTotal.toFixed(2).replace('.', ',')}</span>
                 </li>
             `;
         });
 
         if (taxaEntrega > 0) {
             html += `
-                <li style="display: flex; justify-content: space-between; padding: 6px 0; color: #aaa;">
+                <li style="display: flex; justify-content: space-between; padding: 7px 0; color: var(--text-2); font-size: 0.88rem;">
                     <span>Taxa de Entrega</span>
-                    <span>R$ ${taxaEntrega.toFixed(2)}</span>
+                    <span class="num">R$ ${taxaEntrega.toFixed(2).replace('.', ',')}</span>
                 </li>
             `;
         }
 
         const totalFinal = subtotal + taxaEntrega;
         html += `
-            </ul>
-            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 1.2rem; font-weight: bold; color: var(--primary);">
-                <span>Total:</span>
-                <span>R$ ${totalFinal.toFixed(2)}</span>
+                    </ul>
+                </div>
+
+                <div class="row-between" style="margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line-strong);">
+                    <strong style="font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em;">Total Geral:</strong>
+                    <strong class="price" style="font-size: 1.8rem;">R$ ${totalFinal.toFixed(2).replace('.', ',')}</strong>
+                </div>
             </div>
         `;
 
         document.getElementById('modal-conteudo').innerHTML = html;
-        document.getElementById('modal-detalhes-overlay').style.display = 'flex';
+        modalOverlay.classList.add('is-open');
     }
 
     function fecharModalDetalhes() {
-        document.getElementById('modal-detalhes-overlay').style.display = 'none';
+        modalOverlay.classList.remove('is-open');
     }
+
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) fecharModalDetalhes();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') fecharModalDetalhes();
+    });
 
     // --- Polling em Tempo Real (Consulta a cada 10s sem F5) ---
     let maiorIdConhecido = 0;
@@ -268,13 +314,12 @@
             .then(data => {
                 if (data.success && data.novos_detectados) {
                     tocarSomNovoPedido();
-                    // Recarrega automaticamente para renderizar o novo pedido
                     setTimeout(() => {
                         window.location.reload();
                     }, 800);
                 }
             })
-            .catch(err => console.debug('Polling background error:', err));
+            .catch(err => console.debug('Polling background:', err));
     }, 10000);
 </script>
 {% endblock %}

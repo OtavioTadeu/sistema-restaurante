@@ -222,7 +222,13 @@ def cliente_required(f):
 # Context processor para disponibilizar CSRF e configurações nos templates
 @app.context_processor
 def inject_global_vars():
+    hoje = datetime.now()
+    dias_semana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+    meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+    data_formatada = f"{dias_semana[hoje.weekday()]}, {hoje.day} de {meses[hoje.month - 1]}"
+
     return {
+        'data_hoje': data_formatada,
         'loja_aberta': Configuracao.get('loja_aberta', '1') == '1',
         'mensagem_loja_fechada': Configuracao.get('mensagem_loja_fechada', 'Estamos fechados no momento.'),
         'taxa_entrega_padrao': float(Configuracao.get('taxa_entrega', '0.00') or 0.0),

@@ -1,0 +1,9 @@
+{% from 'partials/_ui.html' import icon %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="alert {{ 'alert-error' if category == 'error' }}" role="{{ 'alert' if category == 'error' else 'status' }}">
+        {{ icon('alert' if category == 'error' else 'check') }}
+        <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+{% endwith %}

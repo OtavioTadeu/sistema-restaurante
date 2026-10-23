@@ -1,0 +1,17 @@
+{# Logo do Dogão do Castelo recriada em SVG + tipografia (fiel à marca original) #}
+{% macro logo(size='', href=None) -%}
+<{{ 'a' if href else 'div' }} class="brand {{ 'brand-' ~ size if size }}" {% if href %}href="{{ href }}"{% endif %} aria-label="Dogão do Castelo">
+    <svg class="brand-tower" viewBox="0 0 60 78" aria-hidden="true">
+        <path d="M2 0h13v8h8V0h14v8h8V0h13v21h-6v38l6 17H2l6-17V21H2z"/>
+        <path class="window" d="M24.5 52V38.5a5.5 5.5 0 0 1 11 0V52z"/>
+    </svg>
+    <span class="brand-word" aria-hidden="true">
+        <span class="w1">DOGÃO</span><span class="w2">DO</span>
+        <span class="w3">CASTELO</span>
+    </span>
+</{{ 'a' if href else 'div' }}>
+{%- endmacro %}
+
+{% macro icon(name, cls='') -%}
+<svg class="icon {{ cls }}" aria-hidden="true"><use href="#i-{{ name }}"></use></svg>
+{%- endmacro %}

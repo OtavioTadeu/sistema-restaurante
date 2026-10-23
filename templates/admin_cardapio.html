@@ -1,81 +1,141 @@
 {% extends 'base_admin.html' %}
+{% from 'partials/_ui.html' import icon %}
 
-{% block title %}Admin - Cardápio do Dia{% endblock %}
+{% block title %}Cardápio do Dia — Painel Admin{% endblock %}
 
 {% block content %}
-<header>
-    <h1>Gerenciar Cardápio do Dia</h1>
-    <p>Adicione os pratos do catálogo que estarão disponíveis hoje para os clientes.</p>
-</header>
+<div class="admin-header">
+    <div>
+        <p class="eyebrow">Oferta do dia</p>
+        <h1>Cardápio do Dia</h1>
+        <p>Defina quais pratos do catálogo estarão disponíveis para os clientes hoje.</p>
+    </div>
+</div>
 
-<div class="grid-2">
-    <section class="card form-section">
-        <h2>Adicionar Prato ao Cardápio</h2>
-        <form action="{{ url_for('add_cardapio') }}" method="POST" class="modern-form">
+<div class="admin-grid-2">
+    <!-- Adicionar ao Cardápio -->
+    <section class="card">
+        <div class="card-title">
+            <h2>Adicionar Prato</h2>
+        </div>
+        <form action="{{ url_for('add_cardapio') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-group">
-                <label for="prato_id">Escolha um Prato do Catálogo:</label>
-                <select id="prato_id" name="prato_id" required>
+
+            <div class="field">
+                <label class="label" for="prato_id">Prato do Catálogo</label>
+                {% if pratos_catalogo %}
+                <select class="select" id="prato_id" name="prato_id" required>
                     {% for prato in pratos_catalogo %}
                     <option value="{{ prato.id }}">{{ prato.nome_prato }}</option>
                     {% endfor %}
                 </select>
+                {% else %}
+                <p class="subtle" style="font-size: 0.88rem; margin: 8px 0 0;">
+                    Nenhum prato cadastrado no catálogo. <a href="{{ url_for('admin_pratos') }}" style="color: var(--yellow); text-decoration: underline;">Cadastre pratos primeiro</a>.
+                </p>
+                {% endif %}
             </div>
-            <div class="form-group">
-                <label for="descricao_dia">Acompanhamentos de Hoje (Opcional): <br><small>(Deixe em branco para usar a descrição padrão)</small></label>
-                <input type="text" id="descricao_dia" name="descricao_dia">
+
+            <div class="field">
+                <label class="label" for="descricao_dia">
+                    Acompanhamentos de Hoje <span class="opt">(opcional)</span>
+                </label>
+                <input class="input" type="text" id="descricao_dia" name="descricao_dia" placeholder="Deixe em branco para usar a descrição padrão">
+                <span class="hint">Substitui temporariamente os acompanhamentos padrão apenas para o dia de hoje.</span>
             </div>
-            <button type="submit" class="btn btn-primary">Adicionar ao Cardápio</button>
+
+            <button type="submit" class="btn btn-primary" {% if not pratos_catalogo %}disabled{% endif %}>
+                {{ icon('plus') }}
+                <span>Adicionar ao Cardápio</span>
+            </button>
         </form>
     </section>
 
-    <section class="card form-section bg-danger-light">
-        <h2 class="text-danger">Limpar Cardápio</h2>
-        <p>Atenção: Isso apagará TODOS os itens do cardápio de hoje.</p>
+    <!-- Limpar Cardápio -->
+    <section class="card" style="border-color: rgba(255, 90, 82, 0.35);">
+        <div class="card-title">
+            <h2 style="color: var(--red);">Zerar Cardápio do Dia</h2>
+        </div>
+        <p class="muted" style="font-size: 0.9rem; margin-bottom: 20px;">
+            Remove todos os itens ofertados hoje de uma só vez. Use ao encerrar o expediente ou para recomeçar o cardápio do próximo turno. Os pratos continuam salvos no catálogo.
+        </p>
         <form action="{{ url_for('clear_cardapio') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger" style="width: 100%;" onclick="return confirm('Tem certeza?');">Limpar Cardápio do Dia</button>
+            <button type="submit" class="btn btn-danger btn-block" onclick="return confirm('Tem certeza que deseja zerar todos os itens do cardápio de hoje?');">
+                {{ icon('trash') }}
+                <span>Limpar Cardápio de Hoje</span>
+            </button>
         </form>
     </section>
 </div>
 
-<section class="card list-section">
-    <h2>Pratos Disponíveis Hoje</h2>
-    <div class="table-responsive">
+<!-- Listagem dos Itens de Hoje -->
+<section class="card" style="padding: 0; overflow: hidden; margin-top: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 12px;">
+        <div class="row">
+            <h2 style="font-size: 1.5rem; margin: 0;">Pratos Disponíveis Hoje</h2>
+            <span class="tag tag-yellow-outline num">{{ cardapio_hoje|length }} pratos</span>
+        </div>
+        <span class="subtle" style="font-size: 0.8rem;">Visíveis no cardápio online</span>
+    </div>
+
+    <div class="table-responsive" style="border: 0; border-radius: 0;">
         <table class="admin-table">
             <thead>
                 <tr>
                     <th>Prato</th>
-                    <th>Acompanha</th>
+                    <th>Acompanhamentos de Hoje</th>
                     <th>Status</th>
-                    <th>Ações</th>
+                    <th style="text-align: right;">Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in cardapio_hoje %}
                 <tr>
-                    <td><strong>{{ item.prato.nome_prato }}</strong></td>
-                    <td><small>{{ item.descricao_dia }}</small></td>
                     <td>
-                        <span class="badge {% if item.disponivel %}badge-success{% else %}badge-danger{% endif %}">
-                            {% if item.disponivel %}Disponível{% else %}Esgotado{% endif %}
-                        </span>
+                        <strong style="color: var(--white); font-size: 1rem;">{{ item.prato.nome_prato }}</strong>
                     </td>
                     <td>
-                        <div class="actions-flex">
-                            <form action="{{ url_for('toggle_disponivel', item_id=item.id) }}" method="POST" style="margin:0;">
+                        {% if item.descricao_dia %}
+                            <span>{{ item.descricao_dia }}</span>
+                        {% else %}
+                            <span class="subtle" style="font-style: italic;">{{ item.prato.descricao_base or 'Padrão do catálogo' }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.disponivel %}
+                            <span class="tag tag-yellow">Disponível</span>
+                        {% else %}
+                            <span class="tag tag-red">Esgotado</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="actions-flex" style="justify-content: flex-end;">
+                            <form action="{{ url_for('toggle_disponivel', item_id=item.id) }}" method="POST" style="margin: 0;">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-secondary btn-sm">Alternar</button>
+                                <button type="submit" class="btn btn-ghost btn-sm" title="Alternar entre disponível e esgotado">
+                                    {% if item.disponivel %}Marcar Esgotado{% else %}Marcar Disponível{% endif %}
+                                </button>
                             </form>
-                            <form action="{{ url_for('remove_cardapio', item_id=item.id) }}" method="POST" style="margin:0;">
+                            <form action="{{ url_for('remove_cardapio', item_id=item.id) }}" method="POST" style="margin: 0;">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover este item?');">Remover</button>
+                                <button type="submit" class="btn btn-danger btn-sm" title="Remover do cardápio de hoje" onclick="return confirm('Remover este prato do cardápio de hoje?');">
+                                    {{ icon('trash') }}
+                                    <span>Remover</span>
+                                </button>
                             </form>
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4" class="text-center">Nenhum prato adicionado ao cardápio de hoje.</td></tr>
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 48px 20px; color: var(--text-3);">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <span style="font-size: 1rem; color: var(--text-2); font-weight: 600;">Nenhum prato adicionado ao cardápio de hoje</span>
+                            <span style="font-size: 0.85rem;">Selecione um prato acima e clique em "Adicionar ao Cardápio" para começar.</span>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

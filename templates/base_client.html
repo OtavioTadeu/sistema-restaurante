@@ -1,28 +1,72 @@
+{% from 'partials/_ui.html' import logo, icon %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0A0A0A">
+    <meta name="description" content="{% block description %}Dogão do Castelo — peça seu cachorro-quente online para retirada ou entrega.{% endblock %}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="restaurante-whatsapp" content="{{ restaurante_whatsapp }}">
     <meta name="taxa-entrega" content="{{ taxa_entrega_padrao }}">
     <meta name="loja-aberta" content="{{ '1' if loja_aberta else '0' }}">
     <title>{% block title %}Dogão do Castelo{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='client.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="client-page">
+    {% include 'partials/_icons.html' %}
+
+    {% block statusbar %}
+    <div class="statusbar {{ '' if loja_aberta else 'is-closed' }}" role="status">
+        <div class="container">
+            <span class="dot" aria-hidden="true"></span>
+            {% if loja_aberta %}
+                <strong>Aberto agora</strong>
+                <span>Retirada no balcão e entrega</span>
+            {% else %}
+                <strong>Fechado</strong>
+                <span>{{ mensagem_loja_fechada }}</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endblock %}
+
     {% block header %}
-    <header class="client-header">
-        <div class="logo">
-            <h1>Dogão do Castelo</h1>
-            <p>{% block subtitle %}O melhor da cidade{% endblock %}</p>
+    <header class="site-header">
+        <div class="container">
+            {{ logo(href=url_for('cardapio')) }}
+            <nav class="header-actions" aria-label="Conta">
+                {% block header_actions %}
+                {% if session.get('cliente_id') %}
+                    <a href="{{ url_for('minha_conta') }}" class="btn btn-ghost">
+                        {{ icon('user') }}<span class="btn-label">{{ session.get('cliente_nome', '').split()[0] if session.get('cliente_nome') else 'Minha conta' }}</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('cliente_login') }}" class="btn btn-ghost">
+                        {{ icon('user') }}<span class="btn-label">Entrar</span>
+                    </a>
+                {% endif %}
+                {% endblock %}
+            </nav>
         </div>
     </header>
     {% endblock %}
 
     {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer class="site-footer">
+        <div class="container">
+            <span>© Dogão do Castelo</span>
+            <span>Pedidos online · Retirada e entrega</span>
+        </div>
+    </footer>
+    {% endblock %}
 
     {% block scripts %}{% endblock %}
 </body>

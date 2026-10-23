@@ -1,48 +1,49 @@
 {% extends 'base_client.html' %}
+{% from 'partials/_ui.html' import logo, icon %}
 
-{% block title %}Cadastro - Dogão do Castelo{% endblock %}
-
-{% block extra_css %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-{% endblock %}
+{% block title %}Criar Conta — Dogão do Castelo{% endblock %}
 
 {% block content %}
-<main class="auth-container" style="max-width: 400px; margin: 40px auto; padding: 20px;">
-    <div class="card" style="padding: 30px;">
-        <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Criar Conta</h2>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div style="color: var(--danger); text-align: center; margin-bottom: 15px;">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+<main class="auth">
+    <div class="auth-card">
+        <div style="text-align: center; margin-bottom: 24px;">
+            {{ logo(size='lg', href=url_for('cardapio')) }}
+        </div>
 
-        <form action="{{ url_for('cliente_cadastro') }}" method="POST" class="modern-form">
+        <p class="eyebrow" style="text-align: center; margin-bottom: 4px;">Novo cliente</p>
+        <h1 style="text-align: center; margin-bottom: 8px;">Criar Conta</h1>
+        <p class="lead" style="text-align: center;">Cadastre-se para agilizar seus próximos pedidos.</p>
+
+        {% include 'partials/_flash.html' %}
+
+        <form action="{{ url_for('cliente_cadastro') }}" method="POST" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-group">
-                <label>Nome Completo:</label>
-                <input type="text" name="nome" required placeholder="Seu nome">
+
+            <div class="field">
+                <label class="label" for="nome">Nome completo</label>
+                <input class="input" type="text" id="nome" name="nome" required autofocus placeholder="Seu nome" autocomplete="name">
             </div>
-            <div class="form-group">
-                <label>WhatsApp (Telefone):</label>
-                <input type="tel" name="telefone" required placeholder="Ex: 31999999999">
+
+            <div class="field">
+                <label class="label" for="telefone">WhatsApp (Telefone)</label>
+                <input class="input" type="tel" id="telefone" name="telefone" required placeholder="Ex: (31) 99999-9999" autocomplete="tel">
+                <span class="hint">Usado como identificador para seu login e contato.</span>
             </div>
-            <div class="form-group">
-                <label>Senha:</label>
-                <input type="password" name="senha" required placeholder="Crie uma senha (mínimo 4 caracteres)">
+
+            <div class="field">
+                <label class="label" for="senha">Crie uma senha</label>
+                <input class="input" type="password" id="senha" name="senha" required placeholder="Mínimo de 4 caracteres" autocomplete="new-password">
             </div>
-            <button type="submit" class="btn-primary-large" style="margin-top: 10px;">Cadastrar</button>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px;">
+                Finalizar cadastro
+            </button>
         </form>
-        
-        <p style="text-align: center; margin-top: 20px; color: #aaa;">
-            Já tem conta? <a href="{{ url_for('cliente_login') }}" style="color: var(--primary);">Entrar</a>
-        </p>
-        <p style="text-align: center; margin-top: 10px;">
-            <a href="{{ url_for('cardapio') }}" style="color: #666; text-decoration: none;">Continuar sem conta (Visitante)</a>
-        </p>
+
+        <div class="auth-foot">
+            <p style="margin: 0 0 6px;">Já possui uma conta? <a href="{{ url_for('cliente_login') }}">Entrar</a></p>
+            <a href="{{ url_for('cardapio') }}" class="auth-guest">Continuar como visitante →</a>
+        </div>
     </div>
 </main>
 {% endblock %}

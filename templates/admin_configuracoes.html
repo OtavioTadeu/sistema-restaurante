@@ -1,85 +1,132 @@
 {% extends 'base_admin.html' %}
+{% from 'partials/_ui.html' import icon %}
 
-{% block title %}Configurações do Sistema - Admin{% endblock %}
+{% block title %}Configurações — Painel Admin{% endblock %}
 
 {% block content %}
-<header>
-    <h1>Configurações do Sistema</h1>
-    <p style="color: #aaa;">Gerencie o funcionamento da loja, taxa de entrega, contatos e credenciais de acesso.</p>
-</header>
+<div class="admin-header">
+    <div>
+        <p class="eyebrow">Preferências & Segurança</p>
+        <h1>Configurações do Sistema</h1>
+        <p>Gerencie o status de funcionamento da loja, taxas de entrega, número do WhatsApp e credenciais de acesso.</p>
+    </div>
+</div>
 
 {% if deve_trocar_senha %}
-<div style="background: rgba(231, 76, 60, 0.2); border-left: 4px solid #e74c3c; padding: 15px; border-radius: 6px; margin-bottom: 25px;">
-    <h3 style="color: #e74c3c; margin: 0 0 5px 0;">🔒 Ação de Segurança Obrigatória</h3>
-    <p style="margin: 0; color: #fff;">O sistema está utilizando a senha padrão inicial (<strong>admin123</strong>). Por motivos de segurança, altere sua senha abaixo para desbloquear o acesso total ao painel.</p>
+<div class="alert alert-danger" style="margin-bottom: 24px;">
+    {{ icon('lock') }}
+    <div>
+        <strong style="display: block; font-size: 0.95rem; margin-bottom: 2px;">Ação de Segurança Obrigatória</strong>
+        <span>O sistema ainda está utilizando a senha padrão inicial (<strong>admin123</strong>). Por motivos de segurança, altere sua senha abaixo para garantir a integridade dos dados.</span>
+    </div>
 </div>
 {% endif %}
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
-    <!-- Card de Operação da Loja -->
+<div class="admin-grid-2">
+    <!-- Operação da Loja -->
     <section class="card">
-        <h2>🏬 Operação da Lanchonete</h2>
-        <form action="{{ url_for('admin_configuracoes') }}" method="POST" class="modern-form">
+        <div class="card-title">
+            <div class="row">
+                {{ icon('store') }}
+                <h2>Operação da Lanchonete</h2>
+            </div>
+            {% if loja_aberta %}
+                <span class="tag tag-yellow">Aberta</span>
+            {% else %}
+                <span class="tag tag-red">Fechada</span>
+            {% endif %}
+        </div>
+
+        <form action="{{ url_for('admin_configuracoes') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="acao" value="atualizar_loja">
 
-            <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <label style="display: flex; align-items: center; cursor: pointer; font-size: 1.1rem; font-weight: 600;">
-                    <input type="checkbox" name="loja_aberta" {% if loja_aberta %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 12px; accent-color: #27ae60;">
-                    Loja Aberta para Pedidos
+            <div class="field" style="padding: 16px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 20px;">
+                <label class="switch">
+                    <input type="checkbox" name="loja_aberta" {% if loja_aberta %}checked{% endif %}>
+                    <span class="switch-track"></span>
+                    <span class="switch-text">
+                        <strong>Recebimento de Pedidos Online</strong>
+                        <small>Quando desativado, o cardápio público continuará visível para consulta, porém o envio de novos pedidos ficará bloqueado.</small>
+                    </span>
                 </label>
-                <small style="color: #aaa; display: block; margin-top: 5px;">
-                    Desmarque esta opção para pausar o recebimento de pedidos no cardápio público (ex: fora do horário de atendimento ou feriados).
-                </small>
             </div>
 
-            <div class="form-group">
-                <label for="mensagem_loja_fechada">Mensagem quando a Loja estiver Fechada:</label>
-                <textarea id="mensagem_loja_fechada" name="mensagem_loja_fechada" rows="2" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">{{ mensagem_loja_fechada }}</textarea>
+            <div class="field">
+                <label class="label" for="mensagem_loja_fechada">Mensagem de Loja Fechada</label>
+                <textarea class="textarea" id="mensagem_loja_fechada" name="mensagem_loja_fechada" rows="2" placeholder="Ex: Estamos fechados no momento. Nosso horário de atendimento é de terça a domingo das 18h às 23h30.">{{ mensagem_loja_fechada }}</textarea>
+                <span class="hint">Exibida em destaque no topo do cardápio público para os clientes quando a loja estiver fechada.</span>
             </div>
 
-            <div class="form-group">
-                <label for="taxa_entrega">Taxa de Entrega Padrão (R$):</label>
-                <input type="number" step="0.50" min="0" id="taxa_entrega" name="taxa_entrega" value="{{ '%.2f'|format(taxa_entrega_padrao) }}" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
-                <small style="color: #aaa;">Valor fixo somado automaticamente aos pedidos com entrega (definir 0.00 se o frete for grátis).</small>
+            <div class="field">
+                <label class="label" for="taxa_entrega">Taxa de Entrega Padrão (R$)</label>
+                <input class="input num" type="number" step="0.50" min="0" id="taxa_entrega" name="taxa_entrega" value="{{ '%.2f'|format(taxa_entrega_padrao) }}" required>
+                <span class="hint">Valor fixo somado automaticamente aos pedidos da modalidade Entrega (defina 0,00 se a taxa for grátis).</span>
             </div>
 
-            <div class="form-group">
-                <label for="restaurante_whatsapp">WhatsApp do Restaurante (Recebimento de Pedidos):</label>
-                <input type="text" id="restaurante_whatsapp" name="restaurante_whatsapp" value="{{ restaurante_whatsapp }}" placeholder="Ex: 5531999999999" required style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
-                <small style="color: #aaa;">Número com DDD e código do país (55) para onde os clientes enviam o comprovante do pedido.</small>
+            <div class="field">
+                <label class="label" for="restaurante_whatsapp">WhatsApp do Restaurante</label>
+                <input class="input num" type="text" id="restaurante_whatsapp" name="restaurante_whatsapp" value="{{ restaurante_whatsapp }}" placeholder="5531999999999" required>
+                <span class="hint">Número com código do país (55) e DDD para onde o cliente será direcionado no fechamento do pedido.</span>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Configurações da Loja</button>
+            <div style="margin-top: 24px;">
+                <button type="submit" class="btn btn-primary btn-block">
+                    {{ icon('check') }}
+                    <span>Salvar Configurações da Loja</span>
+                </button>
+            </div>
         </form>
     </section>
 
-    <!-- Card de Alteração de Senha -->
-    <section class="card">
-        <h2>🔑 Segurança & Senha</h2>
-        <form action="{{ url_for('admin_configuracoes') }}" method="POST" class="modern-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="acao" value="alterar_senha">
-
-            <div class="form-group">
-                <label for="senha_atual">Senha Atual:</label>
-                <input type="password" id="senha_atual" name="senha_atual" required placeholder="Digite sua senha atual" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
-            </div>
-            
-            <div class="form-group">
-                <label for="nova_senha">Nova Senha:</label>
-                <input type="password" id="nova_senha" name="nova_senha" required placeholder="Mínimo de 4 caracteres" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
+    <!-- Segurança e Impressão -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+        <!-- Alteração de Senha -->
+        <section class="card">
+            <div class="card-title">
+                <div class="row">
+                    {{ icon('lock') }}
+                    <h2>Segurança & Acesso</h2>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Atualizar Senha</button>
-        </form>
+            <form action="{{ url_for('admin_configuracoes') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="acao" value="alterar_senha">
 
-        <div style="margin-top: 35px; padding-top: 20px; border-top: 1px solid #333;">
-            <h3 style="font-size: 1rem; color: #aaa;">🖨️ Agente de Impressão Remoto</h3>
-            <p style="color: #777; font-size: 0.85rem;">
-                O agente que roda na máquina do restaurante utiliza o token de segurança configurado no arquivo <code>.env</code> para baixar os cupons diretamente da nuvem.
+                <div class="field">
+                    <label class="label" for="senha_atual">Senha Atual</label>
+                    <input class="input" type="password" id="senha_atual" name="senha_atual" placeholder="Digite sua senha atual" required autocomplete="current-password">
+                </div>
+
+                <div class="field">
+                    <label class="label" for="nova_senha">Nova Senha</label>
+                    <input class="input" type="password" id="nova_senha" name="nova_senha" placeholder="Mínimo de 4 caracteres" required autocomplete="new-password">
+                    <span class="hint">Utilize uma senha segura combinando letras, números e símbolos.</span>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary btn-block">
+                        {{ icon('check') }}
+                        <span>Atualizar Senha de Acesso</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Agente de Impressão Local -->
+        <section class="card" style="background: var(--ink-2); border-color: var(--line);">
+            <div class="row" style="margin-bottom: 12px; gap: 10px;">
+                {{ icon('printer') }}
+                <h3 style="font-size: 1.25rem; margin: 0;">Agente de Impressão Térmica</h3>
+            </div>
+            <p class="muted" style="font-size: 0.88rem; line-height: 1.55; margin: 0 0 12px;">
+                Para imprimir comandas automaticamente na cozinha ou balcão sem travar o navegador, execute o script do agente local (<code>python agente_impressao.py</code>) na máquina conectada à impressora térmica.
             </p>
-        </div>
-    </section>
+            <div style="padding: 10px 12px; background: var(--black); border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 0.8rem; color: var(--text-3); font-family: monospace;">
+                PRINT_AGENT_TOKEN: configurado no arquivo .env
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}
