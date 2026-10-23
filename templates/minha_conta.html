@@ -38,6 +38,7 @@
             <h3 style="margin-top: 0; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Meus Dados Pessoais</h3>
             
             <form action="{{ url_for('minha_conta') }}" method="POST" class="modern-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label>Nome:</label>
                     <input type="text" name="nome" value="{{ cliente.nome }}" required>

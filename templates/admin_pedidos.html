@@ -3,20 +3,35 @@
 {% block title %}Painel de Pedidos - Admin{% endblock %}
 
 {% block content %}
-<header>
-    <h1>Gestão de Pedidos</h1>
-</header>
+<header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+    <div>
+        <h1 style="margin: 0;">Gestão de Pedidos</h1>
+        <p style="margin: 5px 0 0 0; color: #aaa;">Monitore pedidos em tempo real com alertas sonoros e impressão automática.</p>
+    </div>
+    
+    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <!-- Botão de controle de som -->
+        <button id="btn-toggle-sound" class="btn btn-secondary" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
+            <span id="sound-icon">🔊</span> <span id="sound-text">Som Ativado</span>
+        </button>
 
-<section class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-        <h2 style="margin: 0;">Pedidos</h2>
-        <form action="{{ url_for('admin_pedidos') }}" method="GET" style="display: flex; gap: 10px; margin: 0; align-items: center;">
-            <label for="data" style="margin: 0; font-weight: 600;">Data:</label>
-            <input type="date" id="data" name="data" value="{{ data_filtro }}" style="padding: 6px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff;">
+        <form action="{{ url_for('admin_pedidos') }}" method="GET" style="display: flex; gap: 8px; margin: 0; align-items: center;">
+            <input type="date" id="data" name="data" value="{{ data_filtro }}" style="padding: 7px; border-radius: 5px; border: 1px solid #444; background: #222; color: #fff;">
             <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
             <a href="{{ url_for('admin_pedidos') }}" class="btn btn-secondary btn-sm">Hoje</a>
         </form>
     </div>
+</header>
+
+<section class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin: 0; font-size: 1.3rem;">Lista de Pedidos ({{ pedidos|length }})</h2>
+        <small style="color: #2ecc71; display: flex; align-items: center; gap: 5px;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; animation: pulse 1.5s infinite;"></span>
+            Atualização em tempo real ativa
+        </small>
+    </div>
+
     <div class="table-responsive">
         <table class="admin-table">
             <thead>
@@ -24,20 +39,29 @@
                     <th>ID</th>
                     <th>Data</th>
                     <th>Cliente</th>
-                    <th>Tipo</th>
+                    <th>Tipo / Endereço</th>
                     <th>Pagamento</th>
                     <th>Total</th>
                     <th>Status</th>
+                    <th>Comanda</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
                 {% for pedido in pedidos %}
-                <tr>
-                    <td>#{{ pedido.id }}</td>
+                <tr id="pedido-row-{{ pedido.id }}" {% if pedido.status_pedido == 'PENDENTE' %}style="background: rgba(243, 156, 18, 0.08);"{% endif %}>
+                    <td><strong>#{{ pedido.id }}</strong></td>
                     <td>{{ pedido.data_hora.strftime('%d/%m %H:%M') }}</td>
-                    <td><strong>{{ pedido.nome_cliente }}</strong><br><small>{{ pedido.telefone_cliente }}</small></td>
-                    <td><span class="badge badge-secondary">{{ pedido.tipo_pedido }}</span></td>
+                    <td>
+                        <strong>{{ pedido.nome_cliente }}</strong><br>
+                        <small style="color: #aaa;">{{ pedido.telefone_cliente or 'N/A' }}</small>
+                    </td>
+                    <td>
+                        <span class="badge badge-secondary">{{ pedido.tipo_pedido }}</span>
+                        {% if pedido.tipo_pedido == 'ENTREGA' and pedido.endereco_cliente %}
+                            <br><small style="color: #ccc; max-width: 200px; display: inline-block; word-break: break-word;">📍 {{ pedido.endereco_cliente }}</small>
+                        {% endif %}
+                    </td>
                     <td>
                         <small><strong>{{ pedido.forma_pagamento or 'N/A' }}</strong></small>
                         {% if pedido.forma_pagamento == 'DINHEIRO' and pedido.troco_para %}
@@ -49,35 +73,208 @@
                         {% for item in pedido.itens %}
                             {% set ns.total = ns.total + (item.preco_unitario_pago * item.quantidade) %}
                         {% endfor %}
-                        <strong>R$ {{ "%.2f"|format(ns.total) }}</strong>
+                        {% set total_final = ns.total + (pedido.taxa_entrega if pedido.tipo_pedido == 'ENTREGA' else 0.0) %}
+                        <strong>R$ {{ "%.2f"|format(total_final) }}</strong>
+                        {% if pedido.tipo_pedido == 'ENTREGA' and pedido.taxa_entrega > 0 %}
+                            <br><small style="color: #888;">(+R$ {{ "%.2f"|format(pedido.taxa_entrega) }} frete)</small>
+                        {% endif %}
                     </td>
                     <td>
-                        <span class="badge status-{{ pedido.status_pedido|lower|replace(' ', '-') }}">{{ pedido.status_pedido }}</span>
+                        <form action="{{ url_for('atualizar_pedido', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="status" onchange="this.form.submit()" class="status-select status-{{ pedido.status_pedido|lower|replace(' ', '-') }}">
+                                <option value="PENDENTE" {% if pedido.status_pedido == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+                                <option value="EM PREPARO" {% if pedido.status_pedido == 'EM PREPARO' %}selected{% endif %}>Em Preparo</option>
+                                <option value="PRONTO PARA RETIRADA" {% if pedido.status_pedido == 'PRONTO PARA RETIRADA' %}selected{% endif %}>Pronto Retirada</option>
+                                <option value="SAIU PARA ENTREGA" {% if pedido.status_pedido == 'SAIU PARA ENTREGA' %}selected{% endif %}>Saiu Entrega</option>
+                                <option value="ENTREGUE" {% if pedido.status_pedido == 'ENTREGUE' %}selected{% endif %}>Entregue</option>
+                                <option value="CANCELADO" {% if pedido.status_pedido == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+                            </select>
+                        </form>
                     </td>
                     <td>
-                        <div class="actions-flex">
-                            <form action="{{ url_for('atualizar_pedido', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
-                                <select name="status" onchange="this.form.submit()" class="status-select">
-                                    <option value="PENDENTE" {% if pedido.status_pedido == 'PENDENTE' %}selected{% endif %}>Pendente</option>
-                                    <option value="EM PREPARO" {% if pedido.status_pedido == 'EM PREPARO' %}selected{% endif %}>Em Preparo</option>
-                                    <option value="PRONTO PARA RETIRADA" {% if pedido.status_pedido == 'PRONTO PARA RETIRADA' %}selected{% endif %}>Pronto Retirada</option>
-                                    <option value="SAIU PARA ENTREGA" {% if pedido.status_pedido == 'SAIU PARA ENTREGA' %}selected{% endif %}>Saiu Entrega</option>
-                                    <option value="ENTREGUE" {% if pedido.status_pedido == 'ENTREGUE' %}selected{% endif %}>Entregue</option>
-                                    <option value="CANCELADO" {% if pedido.status_pedido == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
-                                </select>
-                            </form>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="alert('Detalhes Pedido #{{pedido.id}}:\n{% for item in pedido.itens %}{{item.quantidade}}x {{item.prato.nome_prato}} ({{item.tamanho.nome}}) - R$ {{item.preco_unitario_pago}}\n{% endfor %}')">Ver Itens</button>
+                        {% if pedido.impresso %}
+                            <span class="badge" style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #27ae60;">✓ Impresso</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid #f39c12;">⏳ Na Fila</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions-flex" style="display: flex; gap: 5px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="abrirModalDetalhes('{{ pedido.id }}', '{{ pedido.nome_cliente|escape }}', '{{ pedido.tipo_pedido }}', '{{ (pedido.endereco_cliente or '')|escape }}', '{{ (pedido.observacoes or '')|escape }}', '{{ (pedido.forma_pagamento or '')|escape }}', '{{ (pedido.troco_para or '')|escape }}', [
+                                {% for item in pedido.itens %}
+                                    { qtd: {{ item.quantidade }}, prato: '{{ item.prato.nome_prato|escape }}', tam: '{{ item.tamanho.nome|escape }}', preco: {{ item.preco_unitario_pago }} },
+                                {% endfor %}
+                            ], {{ pedido.taxa_entrega if pedido.tipo_pedido == 'ENTREGA' else 0.0 }})">👁️ Ver</button>
+
                             <form action="{{ url_for('imprimir_pedido_admin', pedido_id=pedido.id) }}" method="POST" style="margin:0;">
-                                <button type="submit" class="btn btn-primary btn-sm" title="Reimprimir Comanda">🖨️ Imprimir</button>
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-primary btn-sm" title="Reenviar comanda para a impressora">🖨️ Imprimir</button>
                             </form>
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="8" class="text-center">Nenhum pedido recebido ainda.</td></tr>
+                <tr><td colspan="9" class="text-center" style="padding: 30px; color: #888;">Nenhum pedido encontrado para a data selecionada.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </section>
+
+<!-- Modal de Detalhes do Pedido -->
+<div id="modal-detalhes-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
+    <div style="background: #1e1e1e; border: 1px solid #333; border-radius: 10px; max-width: 500px; width: 100%; padding: 25px; max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 15px;">
+            <h2 id="modal-titulo" style="margin: 0; color: var(--primary);">Detalhes do Pedido</h2>
+            <button onclick="fecharModalDetalhes()" style="background: transparent; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <div id="modal-conteudo"></div>
+
+        <button onclick="fecharModalDetalhes()" class="btn btn-secondary" style="width: 100%; margin-top: 20px;">Fechar</button>
+    </div>
+</div>
+
+<style>
+@keyframes pulse {
+    0% { transform: scale(0.95); opacity: 0.7; }
+    50% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.7; }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- Gerenciamento do Alerta Sonoro com Web Audio API ---
+    let somHabilitado = localStorage.getItem('dogao_som_habilitado') !== 'false';
+    const btnToggleSound = document.getElementById('btn-toggle-sound');
+    const soundIcon = document.getElementById('sound-icon');
+    const soundText = document.getElementById('sound-text');
+
+    function atualizarVisualSom() {
+        if (somHabilitado) {
+            soundIcon.textContent = '🔊';
+            soundText.textContent = 'Som Ativado';
+            btnToggleSound.style.borderColor = '#2ecc71';
+        } else {
+            soundIcon.textContent = '🔇';
+            soundText.textContent = 'Som Mutado';
+            btnToggleSound.style.borderColor = '#e74c3c';
+        }
+    }
+
+    atualizarVisualSom();
+
+    btnToggleSound.addEventListener('click', () => {
+        somHabilitado = !somHabilitado;
+        localStorage.setItem('dogao_som_habilitado', somHabilitado);
+        atualizarVisualSom();
+        if (somHabilitado) {
+            tocarSomNovoPedido();
+        }
+    });
+
+    function tocarSomNovoPedido() {
+        if (!somHabilitado) return;
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            // Tom de sino duplo agradável (880Hz -> 1320Hz)
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.15);
+
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.6);
+        } catch (e) {
+            console.warn('Erro ao tocar som:', e);
+        }
+    }
+
+    // --- Modal de Detalhes ---
+    function abrirModalDetalhes(id, cliente, tipo, endereco, observacoes, pagamento, troco, itens, taxaEntrega) {
+        document.getElementById('modal-titulo').innerText = `Pedido #${id} - ${cliente}`;
+        let html = `
+            <p><strong>Tipo:</strong> ${tipo}</p>
+            ${endereco ? `<p><strong>Endereço:</strong> ${endereco}</p>` : ''}
+            <p><strong>Pagamento:</strong> ${pagamento} ${troco ? `(Troco para: ${troco})` : ''}</p>
+            ${observacoes ? `<div style="background: rgba(243, 156, 18, 0.15); border-left: 3px solid #f39c12; padding: 10px; border-radius: 4px; margin: 10px 0;"><strong>⚠️ Observações do Cliente:</strong><br>${observacoes}</div>` : ''}
+            <h4 style="margin-top: 15px; border-bottom: 1px solid #333; padding-bottom: 5px;">Itens:</h4>
+            <ul style="list-style: none; padding: 0;">
+        `;
+
+        let subtotal = 0;
+        itens.forEach(item => {
+            const itemTotal = item.qtd * item.preco;
+            subtotal += itemTotal;
+            html += `
+                <li style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #222;">
+                    <span><strong>${item.qtd}x</strong> ${item.prato} (${item.tam})</span>
+                    <span>R$ ${itemTotal.toFixed(2)}</span>
+                </li>
+            `;
+        });
+
+        if (taxaEntrega > 0) {
+            html += `
+                <li style="display: flex; justify-content: space-between; padding: 6px 0; color: #aaa;">
+                    <span>Taxa de Entrega</span>
+                    <span>R$ ${taxaEntrega.toFixed(2)}</span>
+                </li>
+            `;
+        }
+
+        const totalFinal = subtotal + taxaEntrega;
+        html += `
+            </ul>
+            <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 1.2rem; font-weight: bold; color: var(--primary);">
+                <span>Total:</span>
+                <span>R$ ${totalFinal.toFixed(2)}</span>
+            </div>
+        `;
+
+        document.getElementById('modal-conteudo').innerHTML = html;
+        document.getElementById('modal-detalhes-overlay').style.display = 'flex';
+    }
+
+    function fecharModalDetalhes() {
+        document.getElementById('modal-detalhes-overlay').style.display = 'none';
+    }
+
+    // --- Polling em Tempo Real (Consulta a cada 10s sem F5) ---
+    let maiorIdConhecido = 0;
+    {% for pedido in pedidos %}
+        if ({{ pedido.id }} > maiorIdConhecido) maiorIdConhecido = {{ pedido.id }};
+    {% endfor %}
+
+    const urlFiltroData = new URLSearchParams(window.location.search).get('data') || '';
+
+    setInterval(() => {
+        fetch(`/api/admin/pedidos/novos?ultimo_id=${maiorIdConhecido}&data=${urlFiltroData}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.novos_detectados) {
+                    tocarSomNovoPedido();
+                    // Recarrega automaticamente para renderizar o novo pedido
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 800);
+                }
+            })
+            .catch(err => console.debug('Polling background error:', err));
+    }, 10000);
+</script>
 {% endblock %}

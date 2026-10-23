@@ -1,54 +1,90 @@
-# 🌭 Sistema de Pedidos - Dogão do Castelo
+# 🌭 Sistema de Gestão e Cardápio Digital - Dogão do Castelo
 
-Sistema de gestão de pedidos (POS) e cardápio digital moderno e responsivo desenvolvido sob medida para a lanchonete **Dogão do Castelo**. O projeto permite que clientes façam pedidos online (de casa via celular) e automatiza a impressão de comandas diretamente na cozinha.
+Sistema completo de delivery, cardápio digital e gestão de pedidos (POS) desenvolvido em **Python (Flask)** sob medida para a lanchonete **Dogão do Castelo**.
 
----
-
-## ✨ Funcionalidades (Versão 2.0)
-
-O sistema foi atualizado para uma arquitetura moderna, segura e com acesso remoto.
-
-### 1. Área do Cliente e Cardápio 📱
-* **Contas de Clientes:** Sistema completo de cadastro e login de clientes usando o número do WhatsApp como identificador.
-* **Minha Conta:** Painel exclusivo onde o cliente visualiza seus dados, endereço, preferência de entrega (Retirada/Delivery) e um histórico completo de pedidos passados.
-* **Checkout Automático:** Clientes logados têm seus dados de endereço e telefone pré-preenchidos automaticamente, acelerando o fechamento do pedido. Visitantes ainda podem comprar normalmente!
-* **Múltiplas Formas de Pagamento:** Suporte para escolher a forma de pagamento (Pix, Crédito, Débito e Dinheiro) com cálculo inteligente de troco embutido.
-* **Design "Dark Mode":** Experiência visual Premium e imersiva.
-
-### 2. Painel Administrativo Segurado (`/admin`) 🔒
-* **Acesso Protegido:** Painel inteiramente protegido por senha (`admin123`).
-* **Gestão Total:** Adicionar/Editar/Remover pratos, tamanhos e fotos (upload de imagens nativo).
-* **Painel de Pedidos:** Acompanhamento em tempo real, filtros por data (podendo ver o histórico de vendas de dias anteriores), gerenciamento de status (Pendente, Preparando, etc) e reimpressão de tickets manuais.
-
-### 3. Fila de Impressão (Cozinha) 🖨️
-* Os pedidos são salvos de forma resiliente na pasta `fila_impressao/`. Se houver falha na internet ou falta de papel, nenhum pedido é perdido e ele entra na fila do Windows nativamente.
+O sistema foi preparado para operar em **arquitetura híbrida moderna**:
+* **Servidor e Banco de Dados na Nuvem (24/7):** O cliente acessa de casa pelo celular através do domínio próprio sem sobrecarregar a máquina do restaurante.
+* **Agente de Impressão no Balcão:** Um script leve roda no Windows da lanchonete, consome os novos pedidos da nuvem e comanda a impressora térmica física automaticamente via USB/Spooler.
 
 ---
 
-## 🚀 Guia de Instalação e Execução
+## ✨ Principais Funcionalidades
 
-Como o sistema opera no próprio computador do restaurante, mas precisa ser acessado da rua pelos clientes, nós utilizamos o **Cloudflare Tunnels**.
+### 1. Área do Cliente e Cardápio Digital 📱
+* **Cadastro & Login:** Identificação rápida pelo número de WhatsApp.
+* **Carrinho Inteligente:** Cálculo instantâneo do subtotal e taxa de entrega dinâmica.
+* **Campo de Observações:** Clientes podem especificar detalhes (ex: *"Sem cebola, interfone 302, caprichar na batata"*).
+* **Controle de Loja Aberta/Fechada:** Banner automático quando o restaurante estiver fechado, impedindo fechamento de novos pedidos.
+* **Finalização com WhatsApp:** Geração de link formatado com 1 clique para envio do resumo do pedido diretamente ao WhatsApp da loja.
 
-### Passo 1: Configuração Inicial
-1. Abra o terminal na pasta do projeto.
-2. Crie e ative o ambiente virtual:
-    ```bash
-    py -m venv venv
-    .\venv\Scripts\activate
-    ```
-3. Instale as dependências:
-    ```bash
-    pip install -r requirements.txt
-    ```
+### 2. Painel Administrativo em Tempo Real (`/admin`) 🔒
+* **Segurança de Acesso:** Proteção CSRF em todos os formulários e **troca obrigatória da senha padrão no primeiro acesso**.
+* **Gestão de Pedidos em Tempo Real:** Atualização automática a cada 10 segundos sem necessidade de dar F5.
+* **Alerta Sonoro com Botão Mute:** Notificação sonora agradável quando chega novo pedido, podendo ser ativado (🔊) ou mutado (🔇) pelo operador.
+* **Controle Operacional:** Alternar status da loja (Aberta / Fechada), definir taxa de entrega padrão e alterar o WhatsApp de atendimento.
+* **Gestão de Cardápio e Fotos:** Cadastro de pratos e tamanhos com suporte a upload de fotos com otimização automática via **Cloudinary**.
 
-### Passo 2: Rodar o Sistema (Obrigatório para o Expediente)
+### 3. Agente de Impressão Local (Nuvem ➔ Balcão) 🖨️
+* Script [`agente_impressao.py`](file:///c:/Users/Tadeu/Documents/Projetos/sistema-restaurante/agente_impressao.py) que roda na máquina do caixa/cozinha.
+* Autenticado por token seguro (`X-Printer-Token`), garantindo que apenas a sua impressora receba os pedidos.
+* Inicialização com **1 clique** pelo arquivo [`iniciar_impressor_balcao.bat`](file:///c:/Users/Tadeu/Documents/Projetos/sistema-restaurante/iniciar_impressor_balcao.bat).
 
-Para abrir a lanchonete e iniciar tudo com **1 único clique**, basta dar duplo clique no arquivo:
-👉 **`iniciar_sistema.bat`**
+---
 
-O inicializador abrirá o menu onde você pode escolher:
-- **[1] NGROK (Recomendado):** Inicia o servidor, o impressor de comandas e o túnel com o seu **domínio fixo permanente** (ex: `https://homalographic-unbiliously-randall.ngrok-free.dev`), sem alterar o link para os clientes.
-- **[2] CLOUDFLARE:** Inicia o túnel direto do Cloudflare (link temporário).
-- **[3] Local:** Inicia apenas no computador da loja (`http://localhost:5000`) sem acesso externo.
+## 🛠️ Configuração e Variáveis de Ambiente (`.env`)
 
-As 3 janelas necessárias (Servidor Flask, Impressor de Comandas e Túnel) serão abertas automaticamente e organizadas por cores. Mantenha-as abertas durante o expediente!
+Crie o arquivo `.env` a partir do modelo [`.env.example`](file:///c:/Users/Tadeu/Documents/Projetos/sistema-restaurante/.env.example):
+
+```ini
+# Chave Secreta da Sessão
+SECRET_KEY=sua-chave-secreta-forte
+
+# Banco de Dados
+# Desenvolvimento local (SQLite):
+DATABASE_URL=sqlite:///restaurante.db
+# Produção na Nuvem (PostgreSQL):
+# DATABASE_URL=postgresql://usuario:senha@host:5432/nome_banco
+
+# WhatsApp da Lanchonete (apenas dígitos)
+RESTAURANTE_WHATSAPP=553194585341
+
+# Token do Agente de Impressão
+PRINTER_TOKEN=seu-token-secreto-de-impressao
+
+# Cloudinary (Upload gratuito de fotos dos pratos)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+---
+
+## 🚀 Como Executar Localmente
+
+### 1. Criar o Ambiente Virtual e Instalar Dependências
+```bash
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Iniciar o Servidor Flask
+```bash
+python app.py
+```
+* Cardápio do Cliente: `http://localhost:5000/cardapio`
+* Painel Administrativo: `http://localhost:5000/admin` *(Senha padrão inicial: `admin123`)*
+
+### 3. Iniciar o Agente de Impressão na Loja
+Basta dar duplo clique em:
+👉 **`iniciar_impressor_balcao.bat`**
+
+---
+
+## ☁️ Preparação para Deploy na Nuvem (Render / Railway / VPS)
+
+O projeto já conta com o arquivo [`Procfile`](file:///c:/Users/Tadeu/Documents/Projetos/sistema-restaurante/Procfile) configurado para rodar com o servidor WSGI de produção **Gunicorn**:
+```bash
+web: gunicorn app:app -w 4 -b 0.0.0.0:$PORT
+```
+Basta conectar o repositório Git no **Render.com** ou **Railway.app**, adicionar as variáveis de ambiente do `.env` e adicionar um banco **PostgreSQL gerenciado**.

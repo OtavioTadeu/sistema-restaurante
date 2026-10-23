@@ -2,9 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const addButtons = document.querySelectorAll('.btn-add-item');
     const cartList = document.getElementById('lista-carrinho');
+    const subtotalSpan = document.getElementById('subtotal-carrinho');
     const cartTotalSpan = document.getElementById('total-carrinho');
     const clearCartBtn = document.getElementById('clear-cart-btn');
     const cartBadge = document.getElementById('cart-badge');
+    const linhaTaxaEntrega = document.getElementById('linha-taxa-entrega');
+    const valorTaxaSpan = document.getElementById('valor-taxa-entrega');
     
     const formPedido = document.getElementById('form-pedido');
     const btnFinalizar = document.getElementById('btn-finalizar');
@@ -17,13 +20,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnWhatsapp = document.getElementById('btn-whatsapp');
     const modalPedidoId = document.getElementById('modal-pedido-id');
 
-    // Número do restaurante para WhatsApp (exemplo, deve ser trocado pelo real)
-    const RESTAURANTE_WHATSAPP = "553194585341"; 
+    // Metadados dinâmicos injetados com segurança pelo backend
+    const metaWhatsapp = document.querySelector('meta[name="restaurante-whatsapp"]');
+    const RESTAURANTE_WHATSAPP = metaWhatsapp ? metaWhatsapp.getAttribute('content') : "553194585341";
+
+    const metaTaxa = document.querySelector('meta[name="taxa-entrega"]');
+    const TAXA_ENTREGA = metaTaxa ? (parseFloat(metaTaxa.getAttribute('content')) || 0) : 0;
+
+    const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+    const CSRF_TOKEN = metaCsrf ? metaCsrf.getAttribute('content') : "";
+
+    const metaLoja = document.querySelector('meta[name="loja-aberta"]');
+    const LOJA_ABERTA = metaLoja ? metaLoja.getAttribute('content') === '1' : true;
 
     let cart = [];
 
+    // Adicionar item ao carrinho
     addButtons.forEach(button => {
         button.addEventListener('click', () => {
+            if (!LOJA_ABERTA) {
+                alert('A lanchonete está fechada no momento.');
+                return;
+            }
+
             const item = {
                 pratoId: button.dataset.pratoId,
                 pratoNome: button.dataset.pratoNome,
@@ -34,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             addToCart(item);
             
-            // Animação de feedback no botão
+            // Feedback visual no botão
             if (!button.dataset.originalHtml) {
                 button.dataset.originalHtml = button.innerHTML;
             }
@@ -56,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 button._resetTimer = null;
             }, 800);
             
-            // Feedback badge
+            // Animação no badge
             cartBadge.classList.remove('bump');
             void cartBadge.offsetWidth;
             cartBadge.classList.add('bump');
@@ -86,16 +105,18 @@ document.addEventListener('DOMContentLoaded', () => {
         cartList.innerHTML = '';
         if (cart.length === 0) {
             cartList.innerHTML = '<div class="empty-cart-msg">Seu carrinho está vazio.</div>';
+            if (subtotalSpan) subtotalSpan.textContent = 'R$ 0.00';
             cartTotalSpan.textContent = 'R$ 0.00';
             cartBadge.innerText = '0';
+            if (linhaTaxaEntrega) linhaTaxaEntrega.style.display = 'none';
             return;
         }
 
-        let total = 0;
+        let subtotal = 0;
         let count = 0;
         cart.forEach((item, index) => {
             const itemTotal = item.preco * item.quantidade;
-            total += itemTotal;
+            subtotal += itemTotal;
             count += item.quantidade;
 
             const itemElement = document.createElement('div');
@@ -115,7 +136,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         cartBadge.innerText = count;
-        cartTotalSpan.textContent = `R$ ${total.toFixed(2)}`;
+        if (subtotalSpan) subtotalSpan.textContent = `R$ ${subtotal.toFixed(2)}`;
+
+        // Calcular frete se for Entrega
+        const isEntrega = tipoEntrega && tipoEntrega.checked;
+        let valorFrete = (isEntrega && TAXA_ENTREGA > 0) ? TAXA_ENTREGA : 0;
+
+        if (linhaTaxaEntrega) {
+            if (isEntrega && TAXA_ENTREGA > 0) {
+                linhaTaxaEntrega.style.display = 'flex';
+                if (valorTaxaSpan) valorTaxaSpan.textContent = `R$ ${TAXA_ENTREGA.toFixed(2)}`;
+            } else {
+                linhaTaxaEntrega.style.display = 'none';
+            }
+        }
+
+        const totalGeral = subtotal + valorFrete;
+        cartTotalSpan.textContent = `R$ ${totalGeral.toFixed(2)}`;
     }
 
     cartList.addEventListener('click', (event) => {
@@ -141,102 +178,146 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    tipoRetirada.addEventListener('change', () => {
-        if (tipoRetirada.checked) campoEndereco.style.display = 'none';
-    });
+    if (tipoRetirada) {
+        tipoRetirada.addEventListener('change', () => {
+            if (tipoRetirada.checked) {
+                campoEndereco.style.display = 'none';
+                renderCart();
+            }
+        });
+    }
 
-    tipoEntrega.addEventListener('change', () => {
-        if (tipoEntrega.checked) campoEndereco.style.display = 'block';
-    });
+    if (tipoEntrega) {
+        tipoEntrega.addEventListener('change', () => {
+            if (tipoEntrega.checked) {
+                campoEndereco.style.display = 'block';
+                renderCart();
+            }
+        });
+    }
 
     const formaPagamento = document.getElementById('forma_pagamento');
     const campoTroco = document.getElementById('campo_troco');
     
-    formaPagamento.addEventListener('change', () => {
-        if (formaPagamento.value === 'DINHEIRO') {
-            campoTroco.style.display = 'block';
-        } else {
-            campoTroco.style.display = 'none';
-        }
-    });
+    if (formaPagamento) {
+        formaPagamento.addEventListener('change', () => {
+            if (formaPagamento.value === 'DINHEIRO') {
+                campoTroco.style.display = 'block';
+            } else {
+                campoTroco.style.display = 'none';
+            }
+        });
+    }
 
-    function gerarTextoWhatsApp(pedidoId, dados, itens, total) {
+    function gerarTextoWhatsApp(pedidoId, dados, itens, subtotal, taxaEntrega) {
         let texto = `*NOVO PEDIDO #${pedidoId}*\n`;
         texto += `*Cliente:* ${dados.nome_cliente}\n`;
+        texto += `*Telefone:* ${dados.telefone_cliente}\n`;
         texto += `*Tipo:* ${dados.tipo_pedido}\n`;
+        
         if (dados.tipo_pedido === 'ENTREGA') {
             texto += `*Endereço:* ${dados.endereco_cliente}\n`;
         }
+        
         texto += `*Pagamento:* ${dados.forma_pagamento}\n`;
         if (dados.forma_pagamento === 'DINHEIRO' && dados.troco_para) {
             texto += `*Troco para:* ${dados.troco_para}\n`;
         }
-        texto += `\n*ITENS:*\n`;
+
+        if (dados.observacoes && dados.observacoes.trim() !== '') {
+            texto += `\n*OBSERVAÇÕES:* ${dados.observacoes.trim()}\n`;
+        }
+
+        texto += `\n*ITENS DO PEDIDO:*\n`;
         itens.forEach(item => {
-            texto += `${item.quantidade}x ${item.pratoNome} (${item.tamanhoNome}) - R$ ${(item.preco * item.quantidade).toFixed(2)}\n`;
+            texto += `• ${item.quantidade}x ${item.pratoNome} (${item.tamanhoNome}) - R$ ${(item.preco * item.quantidade).toFixed(2)}\n`;
         });
-        texto += `\n*TOTAL:* R$ ${total.toFixed(2)}\n`;
+
+        if (dados.tipo_pedido === 'ENTREGA' && taxaEntrega > 0) {
+            texto += `\n*Taxa de Entrega:* R$ ${taxaEntrega.toFixed(2)}\n`;
+        }
+
+        const totalFinal = subtotal + (dados.tipo_pedido === 'ENTREGA' ? taxaEntrega : 0);
+        texto += `\n*TOTAL A PAGAR: R$ ${totalFinal.toFixed(2)}*\n`;
+        
         return encodeURIComponent(texto);
     }
 
-    formPedido.addEventListener('submit', (event) => {
-        event.preventDefault(); 
-        
-        if (cart.length === 0) {
-            alert('Adicione itens ao carrinho.');
-            return;
-        }
+    if (formPedido) {
+        formPedido.addEventListener('submit', (event) => {
+            event.preventDefault(); 
 
-        btnFinalizar.disabled = true;
-        btnFinalizar.textContent = 'Processando...';
-
-        const formData = new FormData(formPedido);
-        const dadosPedido = Object.fromEntries(formData.entries());
-        
-        const payload = {
-            pedido: dadosPedido,
-            carrinho: cart
-        };
-
-        fetch('/api/finalizar_pedido', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let total = cart.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
-                
-                modalPedidoId.innerText = data.pedido_id;
-                
-                const textoWs = gerarTextoWhatsApp(data.pedido_id, dadosPedido, cart, total);
-                btnWhatsapp.href = `https://api.whatsapp.com/send?phone=${RESTAURANTE_WHATSAPP}&text=${textoWs}`;
-                
-                modalOverlay.style.display = 'flex';
-                
-                cart = [];
-                cartBadge.innerText = '0';
-                renderCart();
-                formPedido.reset();
-                campoEndereco.style.display = 'none';
-                campoTroco.style.display = 'none';
-                document.getElementById('tipo_retirada').checked = true;
-            } else {
-                alert('Erro ao finalizar pedido: ' + data.message);
+            if (!LOJA_ABERTA) {
+                alert('A lanchonete está fechada para novos pedidos no momento.');
+                return;
             }
-            btnFinalizar.disabled = false;
-            btnFinalizar.textContent = 'Finalizar Pedido';
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Falha na comunicação.');
-            btnFinalizar.disabled = false;
-            btnFinalizar.textContent = 'Finalizar Pedido';
-        });
-    });
+            
+            if (cart.length === 0) {
+                alert('Adicione itens ao carrinho antes de finalizar.');
+                return;
+            }
 
-    btnCloseModal.addEventListener('click', () => {
-        modalOverlay.style.display = 'none';
-    });
+            btnFinalizar.disabled = true;
+            btnFinalizar.textContent = 'Processando...';
+
+            const formData = new FormData(formPedido);
+            const dadosPedido = Object.fromEntries(formData.entries());
+            
+            const payload = {
+                pedido: dadosPedido,
+                carrinho: cart
+            };
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (CSRF_TOKEN) {
+                headers['X-CSRFToken'] = CSRF_TOKEN;
+            }
+
+            fetch('/api/finalizar_pedido', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let subtotal = cart.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+                    let taxaAplicada = dadosPedido.tipo_pedido === 'ENTREGA' ? TAXA_ENTREGA : 0;
+                    
+                    modalPedidoId.innerText = data.pedido_id;
+                    
+                    const textoWs = gerarTextoWhatsApp(data.pedido_id, dadosPedido, cart, subtotal, taxaAplicada);
+                    btnWhatsapp.href = `https://api.whatsapp.com/send?phone=${RESTAURANTE_WHATSAPP}&text=${textoWs}`;
+                    
+                    modalOverlay.style.display = 'flex';
+                    
+                    cart = [];
+                    cartBadge.innerText = '0';
+                    renderCart();
+                    formPedido.reset();
+                    campoEndereco.style.display = 'none';
+                    campoTroco.style.display = 'none';
+                    if (tipoRetirada) tipoRetirada.checked = true;
+                } else {
+                    alert('Erro ao finalizar pedido: ' + data.message);
+                }
+                btnFinalizar.disabled = false;
+                btnFinalizar.textContent = 'Finalizar Pedido';
+            })
+            .catch(error => {
+                console.error('Erro na requisição:', error);
+                alert('Falha na comunicação com o servidor. Verifique sua conexão e tente novamente.');
+                btnFinalizar.disabled = false;
+                btnFinalizar.textContent = 'Finalizar Pedido';
+            });
+        });
+    }
+
+    if (btnCloseModal) {
+        btnCloseModal.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+    }
 });

@@ -1,27 +1,85 @@
 {% extends 'base_admin.html' %}
 
-{% block title %}Painel Admin - Configurações{% endblock %}
+{% block title %}Configurações do Sistema - Admin{% endblock %}
 
 {% block content %}
 <header>
     <h1>Configurações do Sistema</h1>
+    <p style="color: #aaa;">Gerencie o funcionamento da loja, taxa de entrega, contatos e credenciais de acesso.</p>
 </header>
 
-<section class="card" style="max-width: 600px;">
-    <h2>Alterar Senha de Administrador</h2>
-    
-    <form action="{{ url_for('admin_configuracoes') }}" method="POST" class="modern-form">
-        <div class="form-group">
-            <label for="senha_atual">Senha Atual:</label>
-            <input type="password" id="senha_atual" name="senha_atual" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="nova_senha">Nova Senha:</label>
-            <input type="password" id="nova_senha" name="nova_senha" required>
-        </div>
+{% if deve_trocar_senha %}
+<div style="background: rgba(231, 76, 60, 0.2); border-left: 4px solid #e74c3c; padding: 15px; border-radius: 6px; margin-bottom: 25px;">
+    <h3 style="color: #e74c3c; margin: 0 0 5px 0;">🔒 Ação de Segurança Obrigatória</h3>
+    <p style="margin: 0; color: #fff;">O sistema está utilizando a senha padrão inicial (<strong>admin123</strong>). Por motivos de segurança, altere sua senha abaixo para desbloquear o acesso total ao painel.</p>
+</div>
+{% endif %}
 
-        <button type="submit" class="btn btn-primary">Salvar Nova Senha</button>
-    </form>
-</section>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
+    <!-- Card de Operação da Loja -->
+    <section class="card">
+        <h2>🏬 Operação da Lanchonete</h2>
+        <form action="{{ url_for('admin_configuracoes') }}" method="POST" class="modern-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="acao" value="atualizar_loja">
+
+            <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-size: 1.1rem; font-weight: 600;">
+                    <input type="checkbox" name="loja_aberta" {% if loja_aberta %}checked{% endif %} style="width: 20px; height: 20px; margin-right: 12px; accent-color: #27ae60;">
+                    Loja Aberta para Pedidos
+                </label>
+                <small style="color: #aaa; display: block; margin-top: 5px;">
+                    Desmarque esta opção para pausar o recebimento de pedidos no cardápio público (ex: fora do horário de atendimento ou feriados).
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label for="mensagem_loja_fechada">Mensagem quando a Loja estiver Fechada:</label>
+                <textarea id="mensagem_loja_fechada" name="mensagem_loja_fechada" rows="2" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">{{ mensagem_loja_fechada }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="taxa_entrega">Taxa de Entrega Padrão (R$):</label>
+                <input type="number" step="0.50" min="0" id="taxa_entrega" name="taxa_entrega" value="{{ '%.2f'|format(taxa_entrega_padrao) }}" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
+                <small style="color: #aaa;">Valor fixo somado automaticamente aos pedidos com entrega (definir 0.00 se o frete for grátis).</small>
+            </div>
+
+            <div class="form-group">
+                <label for="restaurante_whatsapp">WhatsApp do Restaurante (Recebimento de Pedidos):</label>
+                <input type="text" id="restaurante_whatsapp" name="restaurante_whatsapp" value="{{ restaurante_whatsapp }}" placeholder="Ex: 5531999999999" required style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
+                <small style="color: #aaa;">Número com DDD e código do país (55) para onde os clientes enviam o comprovante do pedido.</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Configurações da Loja</button>
+        </form>
+    </section>
+
+    <!-- Card de Alteração de Senha -->
+    <section class="card">
+        <h2>🔑 Segurança & Senha</h2>
+        <form action="{{ url_for('admin_configuracoes') }}" method="POST" class="modern-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="acao" value="alterar_senha">
+
+            <div class="form-group">
+                <label for="senha_atual">Senha Atual:</label>
+                <input type="password" id="senha_atual" name="senha_atual" required placeholder="Digite sua senha atual" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
+            </div>
+            
+            <div class="form-group">
+                <label for="nova_senha">Nova Senha:</label>
+                <input type="password" id="nova_senha" name="nova_senha" required placeholder="Mínimo de 4 caracteres" style="width: 100%; padding: 10px; border-radius: 6px; background: #222; border: 1px solid #444; color: #fff;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Atualizar Senha</button>
+        </form>
+
+        <div style="margin-top: 35px; padding-top: 20px; border-top: 1px solid #333;">
+            <h3 style="font-size: 1rem; color: #aaa;">🖨️ Agente de Impressão Remoto</h3>
+            <p style="color: #777; font-size: 0.85rem;">
+                O agente que roda na máquina do restaurante utiliza o token de segurança configurado no arquivo <code>.env</code> para baixar os cupons diretamente da nuvem.
+            </p>
+        </div>
+    </section>
+</div>
 {% endblock %}

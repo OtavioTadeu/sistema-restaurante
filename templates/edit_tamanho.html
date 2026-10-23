@@ -9,6 +9,7 @@
 
 <section class="card form-section">
     <form action="{{ url_for('edit_tamanho', tamanho_id=tamanho.id) }}" method="POST" class="modern-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="nome">Nome do Tamanho:</label>
             <input type="text" id="nome" name="nome" value="{{ tamanho.nome }}" required>

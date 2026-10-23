@@ -9,21 +9,28 @@
 
 <section class="card form-section">
     <form action="{{ url_for('edit_prato', prato_id=prato.id) }}" method="POST" enctype="multipart/form-data" class="modern-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <label for="nome_prato">Nome do Prato:</label>
             <input type="text" id="nome_prato" name="nome_prato" value="{{ prato.nome_prato }}" required>
         </div>
         <div class="form-group">
-            <label for="descricao_base">Acompanhamentos Padrão:</label>
+            <label for="descricao_base">Acompanhamentos / Ingredientes:</label>
             <input type="text" id="descricao_base" name="descricao_base" value="{{ prato.descricao_base }}">
         </div>
         <div class="form-group">
             <label>Foto do Prato:</label>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="url" id="foto_url" name="foto_url" value="{{ prato.foto_url or '' }}" placeholder="URL da foto (opcional)" style="flex: 1; margin: 0;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="file" id="foto_arquivo" name="foto_arquivo" accept="image/*" style="flex: 1; margin: 0; padding: 7px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
                 <span style="color: var(--text-muted);">ou</span>
-                <input type="file" id="foto_arquivo" name="foto_arquivo" accept="image/*" style="flex: 1; margin: 0; padding: 7px; background: #fff;">
+                <input type="url" id="foto_url" name="foto_url" value="{{ prato.foto_url or '' }}" placeholder="URL direta da foto (opcional)" style="flex: 1; margin: 0; padding: 7px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
             </div>
+            {% if prato.foto_url %}
+            <div style="margin-top: 10px;">
+                <small style="color: #aaa;">Foto atual:</small><br>
+                <img src="{{ prato.foto_url }}" alt="Preview" style="width: 70px; height: 70px; object-fit: cover; border-radius: 6px; margin-top: 5px;">
+            </div>
+            {% endif %}
         </div>
         <div style="margin-top: 20px; display: flex; gap: 10px;">
             <button type="submit" class="btn btn-primary">Salvar Alterações</button>

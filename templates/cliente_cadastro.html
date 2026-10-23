@@ -21,6 +21,7 @@
         {% endwith %}
 
         <form action="{{ url_for('cliente_cadastro') }}" method="POST" class="modern-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label>Nome Completo:</label>
                 <input type="text" name="nome" required placeholder="Seu nome">

@@ -9,22 +9,23 @@
 </head>
 <body class="login-body">
     <div class="login-container">
-        <h2>Acesso Restrito</h2>
-        {% with messages = get_flashed_messages() %}
+        <h2>Acesso Administrativo</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <ul class="flashes">
-                {% for message in messages %}
-                    <li>{{ message }}</li>
+                <ul class="flashes" style="list-style: none; padding: 0; margin-bottom: 15px;">
+                {% for category, message in messages %}
+                    <li style="color: {% if category == 'error' %}#e74c3c{% else %}#2ecc71{% endif %}; margin-bottom: 5px;">{{ message }}</li>
                 {% endfor %}
                 </ul>
             {% endif %}
         {% endwith %}
         <form method="POST" action="{{ url_for('admin_login') }}" class="modern-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
-                <label for="senha">Senha Administrativa:</label>
-                <input type="password" id="senha" name="senha" required>
+                <label for="senha">Senha de Acesso:</label>
+                <input type="password" id="senha" name="senha" required autofocus placeholder="Digite sua senha">
             </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar no Painel</button>
         </form>
     </div>
 </body>

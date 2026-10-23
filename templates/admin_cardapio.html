@@ -5,13 +5,14 @@
 {% block content %}
 <header>
     <h1>Gerenciar Cardápio do Dia</h1>
-    <p>Adicione os pratos do catálogo que estarão disponíveis hoje.</p>
+    <p>Adicione os pratos do catálogo que estarão disponíveis hoje para os clientes.</p>
 </header>
 
 <div class="grid-2">
     <section class="card form-section">
         <h2>Adicionar Prato ao Cardápio</h2>
         <form action="{{ url_for('add_cardapio') }}" method="POST" class="modern-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="prato_id">Escolha um Prato do Catálogo:</label>
                 <select id="prato_id" name="prato_id" required>
@@ -32,6 +33,7 @@
         <h2 class="text-danger">Limpar Cardápio</h2>
         <p>Atenção: Isso apagará TODOS os itens do cardápio de hoje.</p>
         <form action="{{ url_for('clear_cardapio') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-danger" style="width: 100%;" onclick="return confirm('Tem certeza?');">Limpar Cardápio do Dia</button>
         </form>
     </section>
@@ -62,9 +64,11 @@
                     <td>
                         <div class="actions-flex">
                             <form action="{{ url_for('toggle_disponivel', item_id=item.id) }}" method="POST" style="margin:0;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-secondary btn-sm">Alternar</button>
                             </form>
                             <form action="{{ url_for('remove_cardapio', item_id=item.id) }}" method="POST" style="margin:0;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remover este item?');">Remover</button>
                             </form>
                         </div>

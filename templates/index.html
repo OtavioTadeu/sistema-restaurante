@@ -3,12 +3,12 @@
 {% block title %}Faça seu Pedido - Dogão do Castelo{% endblock %}
 
 {% block header %}
-<header class="client-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; text-align: left;">
+<header class="client-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; text-align: left; flex-wrap: wrap; gap: 15px;">
     <div class="logo">
         <h1>Dogão do Castelo</h1>
         <p>O melhor da cidade</p>
     </div>
-    <div class="user-auth" style="display: flex; gap: 10px;">
+    <div class="user-auth" style="display: flex; gap: 10px; align-items: center;">
         {% if cliente %}
             <a href="{{ url_for('minha_conta') }}" class="btn-primary" style="text-decoration: none; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; display: flex; align-items: center;">👤 Olá, {{ cliente.nome.split()[0] }}</a>
         {% else %}
@@ -21,6 +21,14 @@
 {% block content %}
 <div class="container main-layout">
     <div class="cardapio-coluna">
+        {% if not loja_aberta %}
+        <div class="loja-fechada-banner" style="background: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; border-radius: 12px; padding: 20px; margin-bottom: 25px; text-align: center;">
+            <h3 style="color: #e74c3c; margin: 0 0 8px 0; font-size: 1.3rem;">🔴 Restaurante Fechado no Momento</h3>
+            <p style="color: #eee; margin: 0; font-size: 1rem;">{{ mensagem_loja_fechada }}</p>
+            <small style="color: #bbb; display: block; margin-top: 8px;">Você pode visualizar o cardápio, mas o fechamento de pedidos está temporariamente pausado.</small>
+        </div>
+        {% endif %}
+
         <h2 class="section-title">Menu do Dia</h2>
         <div class="cardapio-grid">
             {% for item in cardapio_hoje %}
@@ -41,7 +49,8 @@
                                 data-prato-nome="{{ item.prato.nome_prato }}" 
                                 data-tamanho-id="{{ tam.id }}"
                                 data-tamanho-nome="{{ tam.nome }}" 
-                                data-preco="{{ tam.preco }}">
+                                data-preco="{{ tam.preco }}"
+                                {% if not loja_aberta %}disabled style="opacity: 0.6; cursor: not-allowed;" title="Lanchonete fechada"{% endif %}>
                                 + Adicionar
                             </button>
                         </div>
@@ -51,7 +60,7 @@
             </div>
             {% else %}
             <div class="empty-state">
-                <p>O cardápio de hoje ainda está sendo preparado.</p>
+                <p>O cardápio de hoje ainda está sendo preparado. Volte em instantes!</p>
             </div>
             {% endfor %}
         </div>
@@ -64,11 +73,23 @@
         <div id="lista-carrinho" class="lista-carrinho">
             <div class="empty-cart-msg">Seu carrinho está vazio.</div>
         </div>
-        <div class="carrinho-total">
-            <span>Total:</span>
-            <span id="total-carrinho">R$ 0.00</span>
+
+        <div id="resumo-valores" style="border-top: 1px solid #333; margin-top: 15px; padding-top: 10px;">
+            <div class="carrinho-subtotal" style="display: flex; justify-content: space-between; color: #aaa; margin-bottom: 5px;">
+                <span>Subtotal Itens:</span>
+                <span id="subtotal-carrinho">R$ 0.00</span>
+            </div>
+            <div id="linha-taxa-entrega" style="display: none; justify-content: space-between; color: #aaa; margin-bottom: 8px;">
+                <span>Taxa de Entrega:</span>
+                <span id="valor-taxa-entrega" style="color: #2ecc71;">R$ {{ "%.2f"|format(taxa_entrega_padrao) }}</span>
+            </div>
+            <div class="carrinho-total" style="display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; color: var(--primary);">
+                <span>Total:</span>
+                <span id="total-carrinho">R$ 0.00</span>
+            </div>
         </div>
-        <button type="button" id="clear-cart-btn" class="btn-text-danger">Limpar Carrinho</button>
+
+        <button type="button" id="clear-cart-btn" class="btn-text-danger" style="margin-top: 10px;">Limpar Carrinho</button>
         
         <div id="checkout-section">
             <form id="form-pedido" class="modern-form">
@@ -91,7 +112,12 @@
                 </div>
                 
                 <div class="form-group" id="campo_endereco" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
-                    <input type="text" id="endereco_cliente" name="endereco_cliente" placeholder="Endereço Completo" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
+                    <input type="text" id="endereco_cliente" name="endereco_cliente" placeholder="Endereço Completo com Bairro" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
+                </div>
+
+                <div class="form-group">
+                    <label for="observacoes" style="display:block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; color: #ddd;">Observações do Pedido (Opcional):</label>
+                    <textarea id="observacoes" name="observacoes" rows="2" placeholder="Ex: Sem cebola, ponto da carne, caprichar na batata palha, interfone 302..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: #fff; font-size: 0.95rem; resize: vertical; box-sizing: border-box;"></textarea>
                 </div>
 
                 <div class="form-group">
@@ -106,10 +132,14 @@
                 </div>
 
                 <div class="form-group" id="campo_troco" style="display: none;">
-                    <input type="text" id="troco_para" name="troco_para" placeholder="Troco para quanto? (Deixe em branco se não precisar)">
+                    <input type="text" id="troco_para" name="troco_para" placeholder="Troco para quanto? (Ex: R$ 50)">
                 </div>
 
+                {% if loja_aberta %}
                 <button type="submit" id="btn-finalizar" class="btn-primary-large">Finalizar Pedido</button>
+                {% else %}
+                <button type="button" disabled class="btn-primary-large" style="opacity: 0.6; cursor: not-allowed; background: #666;">Restaurante Fechado</button>
+                {% endif %}
             </form>
         </div>
     </div>
@@ -121,12 +151,12 @@
         <div class="success-icon">✓</div>
         <h2>Pedido Confirmado!</h2>
         <p>Seu pedido (#<span id="modal-pedido-id"></span>) foi registrado com sucesso em nosso sistema.</p>
-        <p>Para agilizar o atendimento, envie o pedido para o nosso WhatsApp!</p>
+        <p>Para agilizar o atendimento, envie os detalhes para o nosso WhatsApp com 1 clique:</p>
         
         <a href="#" id="btn-whatsapp" class="btn-whatsapp" target="_blank">
-            Enviar para o WhatsApp
+            📲 Enviar para o WhatsApp
         </a>
-        <button id="btn-close-modal" class="btn-secondary">Fechar</button>
+        <button id="btn-close-modal" class="btn-secondary" style="margin-top: 15px;">Fechar</button>
     </div>
 </div>
 {% endblock %}
