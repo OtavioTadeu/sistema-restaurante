@@ -19,7 +19,7 @@
 
     <div class="category-tabs" role="tablist" aria-label="Categorias do cardápio">
         <button type="button" class="category-tab is-active" id="tab-pratos" role="tab" aria-selected="true" aria-controls="section-pratos">
-            {{ icon('dog') }}<span>Pratos & Lanches</span>
+            {{ icon('dog') }}<span>Pratos</span>
         </button>
         <button type="button" class="category-tab" id="tab-bebidas" role="tab" aria-selected="false" aria-controls="section-bebidas">
             {{ icon('drink') }}<span>Bebidas & Refrigerantes</span>
@@ -29,7 +29,7 @@
     <div class="shop">
         <div class="shop-catalog">
             <section id="section-pratos" aria-labelledby="titulo-pratos">
-                <h2 id="titulo-pratos" class="sr-only">Pratos e Lanches do Dia</h2>
+                <h2 id="titulo-pratos" class="sr-only">Pratos do Dia</h2>
                 <div class="menu">
                     {% for item in cardapio_hoje %}
                     <article class="dish">
@@ -70,7 +70,7 @@
                     {% else %}
                     <div class="empty">
                         <h3>O cardápio está sendo montado</h3>
-                        <p class="mt-0">Os lanches do dia aparecem aqui em instantes. Volte daqui a pouco.</p>
+                        <p class="mt-0">Os pratos do dia aparecem aqui em instantes. Volte daqui a pouco.</p>
                     </div>
                     {% endfor %}
                 </div>
