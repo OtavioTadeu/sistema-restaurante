@@ -97,7 +97,11 @@
                         {% for item in pedido.itens %}
                             {% set subtotal = item.quantidade * item.preco_unitario_pago %}
                             <li>
-                                <span>{{ item.quantidade }}x {{ item.prato.nome_prato }} <small class="subtle">({{ item.tamanho.nome }})</small></span>
+                                {% if item.bebida %}
+                                    <span>{{ item.quantidade }}x {{ item.bebida.nome }}</span>
+                                {% else %}
+                                    <span>{{ item.quantidade }}x {{ item.prato.nome_prato if item.prato else 'Item' }} {% if item.tamanho %}<small class="subtle">({{ item.tamanho.nome }})</small>{% endif %}</span>
+                                {% endif %}
                                 <span class="num">R$ {{ "%.2f"|format(subtotal)|replace('.', ',') }}</span>
                             </li>
                             {% set ns.total = ns.total + subtotal %}

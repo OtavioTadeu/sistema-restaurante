@@ -65,6 +65,48 @@
 .page-head .meta { color: var(--text-2); font-size: 0.88rem; text-align: right; }
 .page-head .meta strong { display: block; color: var(--white); font-family: var(--font-display); font-size: 1.3rem; font-weight: 400; letter-spacing: .04em; }
 
+/* ---------- Abas de Categorias (Pratos do Dia vs Bebidas) ---------- */
+.category-tabs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.category-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    background: var(--ink-1);
+    color: var(--text-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color .15s, color .15s, border-color .15s;
+    white-space: nowrap;
+}
+.category-tab:hover {
+    color: var(--white);
+    background: var(--ink-2);
+    border-color: var(--text-3);
+}
+.category-tab.is-active {
+    background: var(--yellow);
+    color: var(--yellow-ink);
+    border-color: var(--yellow);
+}
+.category-tab .icon {
+    width: 20px;
+    height: 20px;
+}
+
 /* ---------- Layout principal ---------- */
 .shop {
     display: grid;
@@ -149,6 +191,27 @@
 .add-btn .icon { stroke-width: 2.6; }
 .add-btn.is-added { background: var(--white); color: var(--black); }
 .add-btn:disabled { background: var(--ink-3); color: var(--text-3); cursor: not-allowed; }
+
+/* Bloco de compra da bebida (sem tamanhos, preço direto) */
+.drink-buy {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 18px;
+    border-top: 1px solid var(--line);
+    margin-top: auto;
+    gap: 12px;
+}
+.drink-buy .price {
+    font-size: 1.55rem;
+    line-height: 1;
+}
+.drink-buy .btn-add-drink {
+    min-height: 38px;
+    padding: 8px 16px;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
 
 .empty {
     grid-column: 1 / -1;

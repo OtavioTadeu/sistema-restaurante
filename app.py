@@ -142,6 +142,15 @@ class Prato(db.Model):
     foto_url = db.Column(db.String(500))
     cardapios = db.relationship('CardapioDoDia', back_populates='prato')
 
+class Bebida(db.Model):
+    __tablename__ = 'bebida'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    descricao = db.Column(db.String(200))
+    preco = db.Column(db.Float, nullable=False)
+    foto_url = db.Column(db.String(500))
+    disponivel = db.Column(db.Boolean, default=True, nullable=False)
+
 class CardapioDoDia(db.Model):
     __tablename__ = 'cardapio_do_dia'
     id = db.Column(db.Integer, primary_key=True)
@@ -175,11 +184,13 @@ class ItemPedido(db.Model):
     quantidade = db.Column(db.Integer, default=1, nullable=False)
     preco_unitario_pago = db.Column(db.Float, nullable=False)
     pedido_id = db.Column(db.Integer, db.ForeignKey('pedido.id'), nullable=False)
-    prato_id = db.Column(db.Integer, db.ForeignKey('prato.id'), nullable=False)
-    tamanho_id = db.Column(db.Integer, db.ForeignKey('tamanho.id'), nullable=False)
+    prato_id = db.Column(db.Integer, db.ForeignKey('prato.id'), nullable=True)
+    tamanho_id = db.Column(db.Integer, db.ForeignKey('tamanho.id'), nullable=True)
+    bebida_id = db.Column(db.Integer, db.ForeignKey('bebida.id'), nullable=True)
     pedido = db.relationship('Pedido', back_populates='itens')
     prato = db.relationship('Prato')
     tamanho = db.relationship('Tamanho')
+    bebida = db.relationship('Bebida')
 
 # --- Funções de Autenticação e Permissão ---
 
@@ -528,6 +539,95 @@ def edit_prato(prato_id):
             flash('Erro ao atualizar prato.', 'error')
     return render_template('edit_prato.html', prato=prato)
 
+# --- Rotas Admin (Gestão de Bebidas) ---
+
+@app.route('/admin/bebidas')
+@login_required
+def admin_bebidas():
+    try:
+        bebidas = Bebida.query.order_by(Bebida.nome).all()
+    except Exception as e:
+        logger.error(f"Erro ao carregar bebidas: {e}")
+        bebidas = []
+    return render_template('admin_bebidas.html', bebidas=bebidas)
+
+@app.route('/admin/bebidas/add', methods=['POST'])
+@login_required
+def add_bebida():
+    try:
+        nome = request.form['nome'].strip()
+        preco = float(request.form['preco'].replace(',', '.'))
+        descricao = request.form.get('descricao', '').strip()
+        foto_url = request.form.get('foto_url', '').strip()
+        foto_arquivo = request.files.get('foto_arquivo')
+        if foto_arquivo and foto_arquivo.filename != '':
+            foto_url = upload_foto_prato(foto_arquivo)
+
+        nova_bebida = Bebida(nome=nome, descricao=descricao, preco=preco, foto_url=foto_url, disponivel=True)
+        db.session.add(nova_bebida)
+        db.session.commit()
+        flash('Bebida adicionada ao catálogo com sucesso.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao adicionar bebida: {e}")
+        flash('Erro ao adicionar bebida. Verifique os dados e tente novamente.', 'error')
+    return redirect(url_for('admin_bebidas'))
+
+@app.route('/admin/bebidas/<int:bebida_id>/toggle', methods=['POST'])
+@login_required
+def toggle_disponivel_bebida(bebida_id):
+    try:
+        bebida = db.session.get(Bebida, bebida_id)
+        if bebida:
+            bebida.disponivel = not bebida.disponivel
+            db.session.commit()
+            estado = "disponível" if bebida.disponivel else "esgotada"
+            flash(f"Bebida marcada como {estado}.", 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao alternar status da bebida {bebida_id}: {e}")
+    return redirect(url_for('admin_bebidas'))
+
+@app.route('/admin/bebidas/<int:bebida_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_bebida(bebida_id):
+    bebida = Bebida.query.get_or_404(bebida_id)
+    if request.method == 'POST':
+        try:
+            bebida.nome = request.form['nome'].strip()
+            bebida.preco = float(request.form['preco'].replace(',', '.'))
+            bebida.descricao = request.form.get('descricao', '').strip()
+
+            foto_arquivo = request.files.get('foto_arquivo')
+            if foto_arquivo and foto_arquivo.filename != '':
+                bebida.foto_url = upload_foto_prato(foto_arquivo)
+            elif request.form.get('foto_url'):
+                bebida.foto_url = request.form.get('foto_url').strip()
+
+            db.session.commit()
+            flash('Bebida atualizada com sucesso.', 'success')
+            return redirect(url_for('admin_bebidas'))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Erro ao editar bebida {bebida_id}: {e}")
+            flash('Erro ao atualizar bebida.', 'error')
+    return render_template('edit_bebida.html', bebida=bebida)
+
+@app.route('/admin/bebidas/<int:bebida_id>/delete', methods=['POST'])
+@login_required
+def delete_bebida(bebida_id):
+    try:
+        bebida = db.session.get(Bebida, bebida_id)
+        if bebida:
+            db.session.delete(bebida)
+            db.session.commit()
+            flash('Bebida excluída com sucesso.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao excluir bebida {bebida_id}: {e}")
+        flash('Não é possível excluir esta bebida pois ela já está vinculada a pedidos históricos. Você pode marcá-la como esgotada.', 'error')
+    return redirect(url_for('admin_bebidas'))
+
 @app.route('/admin/add_cardapio', methods=['POST'])
 @login_required
 def add_cardapio():
@@ -699,6 +799,7 @@ def cardapio():
     try:
         cardapio_hoje = CardapioDoDia.query.filter_by(disponivel=True).all()
         tamanhos = Tamanho.query.order_by(Tamanho.preco).all()
+        bebidas = Bebida.query.filter_by(disponivel=True).order_by(Bebida.nome).all()
         cliente = None
         if 'cliente_id' in session:
             cliente = db.session.get(Cliente, session['cliente_id'])
@@ -706,8 +807,9 @@ def cardapio():
         logger.error(f"Erro ao carregar cardápio público: {e}")
         cardapio_hoje = []
         tamanhos = []
+        bebidas = []
         cliente = None
-    return render_template('index.html', cardapio_hoje=cardapio_hoje, tamanhos=tamanhos, cliente=cliente)
+    return render_template('index.html', cardapio_hoje=cardapio_hoje, tamanhos=tamanhos, bebidas=bebidas, cliente=cliente)
 
 # --- Formatação e Fila de Impressão ---
 
@@ -742,14 +844,18 @@ def formatar_texto_cupom(pedido):
 
     subtotal = 0.0
     for item in pedido.itens:
-        nome_prato = item.prato.nome_prato if item.prato else "Item"
-        nome_tamanho = item.tamanho.nome if item.tamanho else ""
+        if item.bebida_id and item.bebida:
+            nome_item = item.bebida.nome
+            linha_item = f"{item.quantidade}x {nome_item}"
+        else:
+            nome_prato = item.prato.nome_prato if item.prato else "Item"
+            nome_tamanho = item.tamanho.nome if item.tamanho else ""
+            linha_item = f"{item.quantidade}x {nome_prato} ({nome_tamanho})"
+
         qtd = item.quantidade
         preco_unit = item.preco_unitario_pago
         preco_total_item = qtd * preco_unit
         subtotal += preco_total_item
-
-        linha_item = f"{qtd}x {nome_prato} ({nome_tamanho})"
         linha_preco = f"R$ {preco_total_item:.2f}"
 
         if len(linha_item) > 24:
@@ -876,23 +982,34 @@ def api_finalizar_pedido():
         db.session.flush()
 
         for item in itens_carrinho:
-            tamanho = db.session.get(Tamanho, int(item['tamanhoId']))
-            prato = db.session.get(Prato, int(item['pratoId']))
-            
-            if not tamanho or not prato:
-                db.session.rollback()
-                return jsonify({"success": False, "message": "Item inválido no carrinho."}), 400
-            
-            quantidade = max(1, int(item['quantidade']))
-            
-            novo_item = ItemPedido(
-                pedido_id=novo_pedido.id,
-                prato_id=prato.id,
-                tamanho_id=tamanho.id,
-                quantidade=quantidade,
-                preco_unitario_pago=tamanho.preco
-            )
-            db.session.add(novo_item)
+            quantidade = max(1, int(item.get('quantidade', 1)))
+            if item.get('tipo') == 'bebida' or item.get('bebidaId'):
+                bebida_id = int(item['bebidaId'])
+                bebida = db.session.get(Bebida, bebida_id)
+                if not bebida:
+                    db.session.rollback()
+                    return jsonify({"success": False, "message": "Bebida inválida no carrinho."}), 400
+                novo_item = ItemPedido(
+                    pedido_id=novo_pedido.id,
+                    bebida_id=bebida.id,
+                    quantidade=quantidade,
+                    preco_unitario_pago=bebida.preco
+                )
+                db.session.add(novo_item)
+            else:
+                tamanho = db.session.get(Tamanho, int(item['tamanhoId']))
+                prato = db.session.get(Prato, int(item['pratoId']))
+                if not tamanho or not prato:
+                    db.session.rollback()
+                    return jsonify({"success": False, "message": "Item inválido no carrinho."}), 400
+                novo_item = ItemPedido(
+                    pedido_id=novo_pedido.id,
+                    prato_id=prato.id,
+                    tamanho_id=tamanho.id,
+                    quantidade=quantidade,
+                    preco_unitario_pago=tamanho.preco
+                )
+                db.session.add(novo_item)
         
         db.session.commit()
         
@@ -911,10 +1028,46 @@ def api_finalizar_pedido():
         logger.error(f"Erro ao finalizar pedido: {e}")
         return jsonify({"success": False, "message": "Erro ao processar pedido. Tente novamente."}), 500
 
-# --- Inicialização ---
+# --- Inicialização e Auto-migração ---
+
+def executar_migracoes_banco():
+    try:
+        with db.engine.connect() as conn:
+            dialect = db.engine.dialect.name
+            if dialect == 'postgresql':
+                conn.execute(db.text("CREATE TABLE IF NOT EXISTS bebida (id SERIAL PRIMARY KEY, nome VARCHAR(100) NOT NULL, descricao VARCHAR(200), preco FLOAT NOT NULL, foto_url VARCHAR(500), disponivel BOOLEAN DEFAULT TRUE NOT NULL);"))
+                conn.execute(db.text("ALTER TABLE item_pedido ADD COLUMN IF NOT EXISTS bebida_id INTEGER REFERENCES bebida(id);"))
+                conn.execute(db.text("ALTER TABLE item_pedido ALTER COLUMN prato_id DROP NOT NULL;"))
+                conn.execute(db.text("ALTER TABLE item_pedido ALTER COLUMN tamanho_id DROP NOT NULL;"))
+                conn.commit()
+            elif dialect == 'sqlite':
+                res = conn.execute(db.text("PRAGMA table_info(item_pedido);")).fetchall()
+                cols = {r[1]: r for r in res}
+                if cols and ('bebida_id' not in cols or (cols.get('prato_id') and cols['prato_id'][3] == 1)):
+                    conn.execute(db.text("""
+                        CREATE TABLE IF NOT EXISTS item_pedido_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            quantidade INTEGER NOT NULL DEFAULT 1,
+                            preco_unitario_pago FLOAT NOT NULL,
+                            pedido_id INTEGER NOT NULL REFERENCES pedido(id),
+                            prato_id INTEGER REFERENCES prato(id),
+                            tamanho_id INTEGER REFERENCES tamanho(id),
+                            bebida_id INTEGER REFERENCES bebida(id)
+                        );
+                    """))
+                    if 'bebida_id' in cols:
+                        conn.execute(db.text("INSERT INTO item_pedido_new (id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id, bebida_id) SELECT id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id, bebida_id FROM item_pedido;"))
+                    else:
+                        conn.execute(db.text("INSERT INTO item_pedido_new (id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id) SELECT id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id FROM item_pedido;"))
+                    conn.execute(db.text("DROP TABLE item_pedido;"))
+                    conn.execute(db.text("ALTER TABLE item_pedido_new RENAME TO item_pedido;"))
+                    conn.commit()
+    except Exception as e:
+        logger.warning(f"Aviso durante auto-migração: {e}")
 
 with app.app_context():
     db.create_all()
+    executar_migracoes_banco()
     # Migrar ou inicializar configurações essenciais
     if not Configuracao.get('admin_password_hash'):
         Configuracao.set('admin_password_hash', generate_password_hash('admin123'))

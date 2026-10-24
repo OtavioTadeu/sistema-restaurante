@@ -56,12 +56,39 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => badge.classList.remove('bump'), 180);
     }
 
-    // ---- Adicionar ao pedido ----
+    // ---- Alternância de Categorias (Pratos / Bebidas) ----
+    const tabPratos = $('#tab-pratos');
+    const tabBebidas = $('#tab-bebidas');
+    const secPratos = $('#section-pratos');
+    const secBebidas = $('#section-bebidas');
+
+    if (tabPratos && tabBebidas && secPratos && secBebidas) {
+        tabPratos.addEventListener('click', () => {
+            tabPratos.classList.add('is-active');
+            tabPratos.setAttribute('aria-selected', 'true');
+            tabBebidas.classList.remove('is-active');
+            tabBebidas.setAttribute('aria-selected', 'false');
+            secPratos.hidden = false;
+            secBebidas.hidden = true;
+        });
+
+        tabBebidas.addEventListener('click', () => {
+            tabBebidas.classList.add('is-active');
+            tabBebidas.setAttribute('aria-selected', 'true');
+            tabPratos.classList.remove('is-active');
+            tabPratos.setAttribute('aria-selected', 'false');
+            secBebidas.hidden = false;
+            secPratos.hidden = true;
+        });
+    }
+
+    // ---- Adicionar prato ao pedido ----
     document.querySelectorAll('.btn-add-item').forEach((button) => {
         button.addEventListener('click', () => {
             if (!LOJA_ABERTA) return;
 
             const novo = {
+                tipo: 'prato',
                 pratoId: button.dataset.pratoId,
                 pratoNome: button.dataset.pratoNome,
                 tamanhoId: button.dataset.tamanhoId,
@@ -70,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 quantidade: 1
             };
 
-            const existente = cart.find((i) => i.pratoId === novo.pratoId && i.tamanhoId === novo.tamanhoId);
+            const existente = cart.find((i) => i.tipo !== 'bebida' && i.pratoId === novo.pratoId && i.tamanhoId === novo.tamanhoId);
             if (existente) existente.quantidade++;
             else cart.push(novo);
 
@@ -81,6 +108,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const original = button.innerHTML;
             button.classList.add('is-added');
             button.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>';
+            clearTimeout(button._t);
+            button._t = setTimeout(() => {
+                button.classList.remove('is-added');
+                button.innerHTML = original;
+            }, 700);
+        });
+    });
+
+    // ---- Adicionar bebida ao pedido ----
+    document.querySelectorAll('.btn-add-drink').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!LOJA_ABERTA) return;
+
+            const novo = {
+                tipo: 'bebida',
+                bebidaId: button.dataset.bebidaId,
+                bebidaNome: button.dataset.bebidaNome,
+                preco: parseFloat(button.dataset.preco),
+                quantidade: 1
+            };
+
+            const existente = cart.find((i) => i.tipo === 'bebida' && i.bebidaId === novo.bebidaId);
+            if (existente) existente.quantidade++;
+            else cart.push(novo);
+
+            render();
+            bumpBadge();
+
+            // feedback no botão
+            const original = button.innerHTML;
+            button.classList.add('is-added');
+            button.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg><span>Adicionado</span>';
             clearTimeout(button._t);
             button._t = setTimeout(() => {
                 button.classList.remove('is-added');
@@ -101,15 +160,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!cart.length) {
             cartList.innerHTML = EMPTY_HTML;
         } else {
-            cartList.innerHTML = cart.map((item, idx) => `
+            cartList.innerHTML = cart.map((item, idx) => {
+                const isBebida = item.tipo === 'bebida';
+                const nome = isBebida ? item.bebidaNome : item.pratoNome;
+                const subtitulo = isBebida ? `Bebida · ${brl(item.preco)}` : `${esc(item.tamanhoNome)} · ${brl(item.preco)}`;
+
+                return `
                 <li class="line">
                     <div>
-                        <div class="line-name">${esc(item.pratoNome)}</div>
-                        <div class="line-size">${esc(item.tamanhoNome)} · ${brl(item.preco)}</div>
+                        <div class="line-name">${esc(nome)}</div>
+                        <div class="line-size">${subtitulo}</div>
                     </div>
                     <div class="line-total">${brl(item.preco * item.quantidade)}</div>
                     <div></div>
-                    <div class="stepper" role="group" aria-label="Quantidade de ${esc(item.pratoNome)}">
+                    <div class="stepper" role="group" aria-label="Quantidade de ${esc(nome)}">
                         <button type="button" data-action="dec" data-index="${idx}" aria-label="Diminuir">
                             <svg class="icon" aria-hidden="true"><use href="#i-${item.quantidade === 1 ? 'trash' : 'minus'}"></use></svg>
                         </button>
@@ -119,7 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         </button>
                     </div>
                 </li>
-            `).join('');
+            `;
+            }).join('');
         }
 
         if (subtotalEl) subtotalEl.textContent = brl(sub);
@@ -195,7 +260,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         t += `\n*Itens*\n`;
         itens.forEach((i) => {
-            t += `${i.quantidade}x ${i.pratoNome} (${i.tamanhoNome}) — ${brl(i.preco * i.quantidade)}\n`;
+            if (i.tipo === 'bebida') {
+                t += `${i.quantidade}x ${i.bebidaNome} — ${brl(i.preco * i.quantidade)}\n`;
+            } else {
+                t += `${i.quantidade}x ${i.pratoNome} (${i.tamanhoNome}) — ${brl(i.preco * i.quantidade)}\n`;
+            }
         });
         if (taxa > 0) t += `Taxa de entrega — ${brl(taxa)}\n`;
         t += `\n*TOTAL: ${brl(sub + taxa)}*`;

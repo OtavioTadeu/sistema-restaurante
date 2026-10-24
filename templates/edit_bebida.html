@@ -1,0 +1,75 @@
+{% extends 'base_admin.html' %}
+{% from 'partials/_ui.html' import icon %}
+
+{% block title %}Editar Bebida — Painel Admin{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <div>
+        <p class="eyebrow">Catálogo Permanente</p>
+        <h1>Editar Bebida</h1>
+        <p>Atualize os detalhes, preço e imagem de <strong>{{ bebida.nome }}</strong>.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin_bebidas') }}" class="btn btn-ghost btn-sm">
+            <span>&larr; Voltar às Bebidas</span>
+        </a>
+    </div>
+</div>
+
+<section class="card" style="max-width: 720px;">
+    <div class="card-title">
+        <h2>Dados da Bebida</h2>
+    </div>
+
+    <form action="{{ url_for('edit_bebida', bebida_id=bebida.id) }}" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="admin-grid-2">
+            <div class="field">
+                <label class="label" for="nome">Nome da Bebida (com tamanho)</label>
+                <input class="input" type="text" id="nome" name="nome" value="{{ bebida.nome }}" required>
+                <span class="hint">Ex: Coca-Cola Lata 350ml, Guaraná Antarctica 2L</span>
+            </div>
+
+            <div class="field">
+                <label class="label" for="preco">Preço Unitário (R$)</label>
+                <input class="input num" type="number" step="0.01" min="0" id="preco" name="preco" value="{{ '%.2f'|format(bebida.preco) }}" required>
+                <span class="hint">Preço cobrado por unidade.</span>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="descricao">Descrição / Observação <span class="opt">(opcional)</span></label>
+            <input class="input" type="text" id="descricao" name="descricao" value="{{ bebida.descricao or '' }}" placeholder="Ex: Gelada, Zero Açúcar">
+        </div>
+
+        <div class="field">
+            <label class="label">Foto da Bebida <span class="opt">(upload ou link externo)</span></label>
+            <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
+                <input class="input" type="file" id="foto_arquivo" name="foto_arquivo" accept="image/*">
+                <span class="subtle" style="font-size: 0.85rem; font-weight: 700;">OU</span>
+                <input class="input" type="url" id="foto_url" name="foto_url" value="{{ bebida.foto_url or '' }}" placeholder="URL direta da foto (https://...)">
+            </div>
+
+            {% if bebida.foto_url %}
+            <div style="margin-top: 14px; padding: 12px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-sm); display: inline-flex; align-items: center; gap: 12px;">
+                <img src="{{ bebida.foto_url }}" alt="Foto atual de {{ bebida.nome }}" style="width: 64px; height: 64px; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line-strong);">
+                <div>
+                    <span class="subtle" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; display: block;">Foto Atual</span>
+                    <a href="{{ bebida.foto_url }}" target="_blank" rel="noopener" class="subtle" style="font-size: 0.82rem; text-decoration: underline; word-break: break-all;">Ver imagem original</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="row" style="margin-top: 28px; gap: 12px;">
+            <button type="submit" class="btn btn-primary">
+                {{ icon('check') }}
+                <span>Salvar Alterações</span>
+            </button>
+            <a href="{{ url_for('admin_bebidas') }}" class="btn btn-ghost">Cancelar</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

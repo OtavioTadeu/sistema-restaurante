@@ -43,6 +43,9 @@
                 <a href="{{ url_for('admin_pratos') }}" {% if request.endpoint in ['admin_pratos', 'edit_prato'] %}class="active"{% endif %}>
                     {{ icon('list') }}<span>Pratos do Catálogo</span>
                 </a>
+                <a href="{{ url_for('admin_bebidas') }}" {% if request.endpoint in ['admin_bebidas', 'edit_bebida'] %}class="active"{% endif %}>
+                    {{ icon('drink') }}<span>Catálogo de Bebidas</span>
+                </a>
                 <a href="{{ url_for('admin') }}" {% if request.endpoint in ['admin', 'edit_tamanho'] %}class="active"{% endif %}>
                     {{ icon('ruler') }}<span>Tamanhos</span>
                 </a>

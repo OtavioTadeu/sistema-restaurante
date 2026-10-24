@@ -116,7 +116,11 @@
                         <div class="actions-flex" style="justify-content: flex-end;">
                             <button type="button" class="btn btn-ghost btn-sm" onclick="abrirModalDetalhes('{{ pedido.id }}', '{{ pedido.nome_cliente|escape }}', '{{ pedido.tipo_pedido }}', '{{ (pedido.endereco_cliente or '')|escape }}', '{{ (pedido.observacoes or '')|escape }}', '{{ (pedido.forma_pagamento or '')|escape }}', '{{ (pedido.troco_para or '')|escape }}', [
                                 {% for item in pedido.itens %}
-                                    { qtd: {{ item.quantidade }}, prato: '{{ item.prato.nome_prato|escape }}', tam: '{{ item.tamanho.nome|escape }}', preco: {{ item.preco_unitario_pago }} },
+                                    {% if item.bebida %}
+                                        { qtd: {{ item.quantidade }}, prato: '{{ item.bebida.nome|escape }}', tam: '', preco: {{ item.preco_unitario_pago }} },
+                                    {% else %}
+                                        { qtd: {{ item.quantidade }}, prato: '{{ (item.prato.nome_prato if item.prato else 'Item')|escape }}', tam: '{{ (item.tamanho.nome if item.tamanho else '')|escape }}', preco: {{ item.preco_unitario_pago }} },
+                                    {% endif %}
                                 {% endfor %}
                             ], {{ pedido.taxa_entrega if pedido.tipo_pedido == 'ENTREGA' else 0.0 }})" title="Ver detalhes">
                                 {{ icon('eye') }}
@@ -258,7 +262,7 @@
             subtotal += itemTotal;
             html += `
                 <li style="display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--line); font-size: 0.92rem;">
-                    <span><strong>${item.qtd}x</strong> ${item.prato} <small class="subtle">(${item.tam})</small></span>
+                    <span><strong>${item.qtd}x</strong> ${item.prato} ${item.tam ? `<small class="subtle">(${item.tam})</small>` : ''}</span>
                     <span class="num">R$ ${itemTotal.toFixed(2).replace('.', ',')}</span>
                 </li>
             `;

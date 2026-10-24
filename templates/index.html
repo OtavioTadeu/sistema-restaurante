@@ -12,59 +12,115 @@
         </div>
         <p class="meta">
             <strong>{{ data_hoje }}</strong>
-            {% if cliente %}Bom te ver de novo, {{ cliente.nome.split()[0] }}.{% else %}Retirada no balcão ou entrega.{% endif %}
+            {% if cliente %}Bom te ver de novo, {{ cliente.nome.split()[0] }}.{% else %}Retirada no balcão ou entrega.{%
+            endif %}
         </p>
     </div>
 
+    <div class="category-tabs" role="tablist" aria-label="Categorias do cardápio">
+        <button type="button" class="category-tab is-active" id="tab-pratos" role="tab" aria-selected="true" aria-controls="section-pratos">
+            {{ icon('dog') }}<span>Pratos & Lanches</span>
+        </button>
+        <button type="button" class="category-tab" id="tab-bebidas" role="tab" aria-selected="false" aria-controls="section-bebidas">
+            {{ icon('drink') }}<span>Bebidas & Refrigerantes</span>
+        </button>
+    </div>
+
     <div class="shop">
-        <section aria-labelledby="titulo-menu">
-            <h2 id="titulo-menu" class="sr-only">Itens disponíveis</h2>
-            <div class="menu">
-                {% for item in cardapio_hoje %}
-                <article class="dish">
-                    {% if item.prato.foto_url %}
-                    <div class="dish-photo">
-                        <img src="{{ item.prato.foto_url }}" alt="{{ item.prato.nome_prato }}" loading="lazy">
-                    </div>
+        <div class="shop-catalog">
+            <section id="section-pratos" aria-labelledby="titulo-pratos">
+                <h2 id="titulo-pratos" class="sr-only">Pratos e Lanches do Dia</h2>
+                <div class="menu">
+                    {% for item in cardapio_hoje %}
+                    <article class="dish">
+                        {% if item.prato.foto_url %}
+                        <div class="dish-photo">
+                            <img src="{{ item.prato.foto_url }}" alt="{{ item.prato.nome_prato }}" loading="lazy">
+                        </div>
+                        {% else %}
+                        <div class="dish-photo is-empty" aria-hidden="true">
+                            <svg viewBox="0 0 60 78">
+                                <path d="M2 0h13v8h8V0h14v8h8V0h13v21h-6v38l6 17H2l6-17V21H2z" />
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        <div class="dish-body">
+                            <h3>{{ item.prato.nome_prato }}</h3>
+                            {% if item.descricao_dia %}<p class="dish-desc">{{ item.descricao_dia }}</p>{% endif %}
+                        </div>
+
+                        <ul class="sizes">
+                            {% for tam in tamanhos %}
+                            <li class="size">
+                                <span class="size-name">{{ tam.nome }}</span>
+                                <span class="size-leader" aria-hidden="true"></span>
+                                <span class="price">R$ {{ "%.2f"|format(tam.preco)|replace('.', ',') }}</span>
+                                <button type="button" class="add-btn btn-add-item" data-prato-id="{{ item.prato.id }}"
+                                    data-prato-nome="{{ item.prato.nome_prato }}" data-tamanho-id="{{ tam.id }}"
+                                    data-tamanho-nome="{{ tam.nome }}" data-preco="{{ tam.preco }}"
+                                    aria-label="Adicionar {{ item.prato.nome_prato }} ({{ tam.nome }})" {% if not
+                                    loja_aberta %}disabled title="Estamos fechados no momento" {% endif %}>
+                                    {{ icon('plus') }}
+                                </button>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </article>
                     {% else %}
-                    <div class="dish-photo is-empty" aria-hidden="true">
-                        <svg viewBox="0 0 60 78"><path d="M2 0h13v8h8V0h14v8h8V0h13v21h-6v38l6 17H2l6-17V21H2z"/></svg>
+                    <div class="empty">
+                        <h3>O cardápio está sendo montado</h3>
+                        <p class="mt-0">Os lanches do dia aparecem aqui em instantes. Volte daqui a pouco.</p>
                     </div>
-                    {% endif %}
-
-                    <div class="dish-body">
-                        <h3>{{ item.prato.nome_prato }}</h3>
-                        {% if item.descricao_dia %}<p class="dish-desc">{{ item.descricao_dia }}</p>{% endif %}
-                    </div>
-
-                    <ul class="sizes">
-                        {% for tam in tamanhos %}
-                        <li class="size">
-                            <span class="size-name">{{ tam.nome }}</span>
-                            <span class="size-leader" aria-hidden="true"></span>
-                            <span class="price">R$ {{ "%.2f"|format(tam.preco)|replace('.', ',') }}</span>
-                            <button type="button" class="add-btn btn-add-item"
-                                data-prato-id="{{ item.prato.id }}"
-                                data-prato-nome="{{ item.prato.nome_prato }}"
-                                data-tamanho-id="{{ tam.id }}"
-                                data-tamanho-nome="{{ tam.nome }}"
-                                data-preco="{{ tam.preco }}"
-                                aria-label="Adicionar {{ item.prato.nome_prato }} ({{ tam.nome }})"
-                                {% if not loja_aberta %}disabled title="Estamos fechados no momento"{% endif %}>
-                                {{ icon('plus') }}
-                            </button>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </article>
-                {% else %}
-                <div class="empty">
-                    <h3>O cardápio está sendo montado</h3>
-                    <p class="mt-0">Os lanches do dia aparecem aqui em instantes. Volte daqui a pouco.</p>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-        </section>
+            </section>
+
+            <section id="section-bebidas" aria-labelledby="titulo-bebidas" hidden>
+                <h2 id="titulo-bebidas" class="sr-only">Bebidas & Refrigerantes</h2>
+                <div class="menu">
+                    {% for bebida in bebidas %}
+                    <article class="dish">
+                        {% if bebida.foto_url %}
+                        <div class="dish-photo">
+                            <img src="{{ bebida.foto_url }}" alt="{{ bebida.nome }}" loading="lazy">
+                        </div>
+                        {% else %}
+                        <div class="dish-photo is-empty" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M7 2h10l-1 10.5a5 5 0 0 1-5 4.5 5 5 0 0 1-5-4.5L5 2h2z" />
+                                <path d="M6 7h12" />
+                                <path d="M12 17v4M8 21h8" />
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        <div class="dish-body">
+                            <h3>{{ bebida.nome }}</h3>
+                            {% if bebida.descricao %}<p class="dish-desc">{{ bebida.descricao }}</p>{% endif %}
+                        </div>
+
+                        <div class="drink-buy">
+                            <span class="price">R$ {{ "%.2f"|format(bebida.preco)|replace('.', ',') }}</span>
+                            <button type="button" class="btn btn-primary btn-sm btn-add-drink"
+                                data-bebida-id="{{ bebida.id }}"
+                                data-bebida-nome="{{ bebida.nome }}"
+                                data-preco="{{ bebida.preco }}"
+                                aria-label="Adicionar {{ bebida.nome }} à sacola"
+                                {% if not loja_aberta %}disabled title="Estamos fechados no momento"{% endif %}>
+                                {{ icon('plus') }}<span>Adicionar</span>
+                            </button>
+                        </div>
+                    </article>
+                    {% else %}
+                    <div class="empty">
+                        <h3>Nenhuma bebida disponível no momento</h3>
+                        <p class="mt-0">Em breve adicionaremos novas opções de refrigerantes e bebidas geladas.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
 
         <aside class="order" id="carrinho-panel" aria-labelledby="titulo-pedido">
             <div class="order-head">
@@ -73,14 +129,19 @@
             </div>
 
             <ul id="lista-carrinho" class="order-items" aria-live="polite">
-                <li class="order-empty">{{ icon('bag') }}Nenhum item ainda.<br>Toque no <strong>+</strong> para adicionar.</li>
+                <li class="order-empty">{{ icon('bag') }}Nenhum item ainda.<br>Toque no <strong>+</strong> para
+                    adicionar.</li>
             </ul>
 
             <div class="order-summary">
                 <div class="sum-row"><span>Subtotal</span><span id="subtotal-carrinho" class="num">R$ 0,00</span></div>
-                <div class="sum-row" id="linha-taxa-entrega" hidden><span>Taxa de entrega</span><span id="valor-taxa-entrega" class="num">R$ {{ "%.2f"|format(taxa_entrega_padrao)|replace('.', ',') }}</span></div>
-                <div class="sum-row total"><span>Total</span><span id="total-carrinho" class="price">R$ 0,00</span></div>
-                <div class="order-clear"><button type="button" id="clear-cart-btn" class="btn btn-text btn-sm">Limpar pedido</button></div>
+                <div class="sum-row" id="linha-taxa-entrega" hidden><span>Taxa de entrega</span><span
+                        id="valor-taxa-entrega" class="num">R$ {{ "%.2f"|format(taxa_entrega_padrao)|replace('.', ',')
+                        }}</span></div>
+                <div class="sum-row total"><span>Total</span><span id="total-carrinho" class="price">R$ 0,00</span>
+                </div>
+                <div class="order-clear"><button type="button" id="clear-cart-btn" class="btn btn-text btn-sm">Limpar
+                        pedido</button></div>
             </div>
 
             <form id="form-pedido" class="order-form" novalidate>
@@ -92,11 +153,14 @@
                     <p class="section-label">Seus dados</p>
                     <div class="field">
                         <label class="label" for="nome_cliente">Nome</label>
-                        <input class="input" type="text" id="nome_cliente" name="nome_cliente" autocomplete="name" required {% if cliente %}value="{{ cliente.nome }}"{% endif %}>
+                        <input class="input" type="text" id="nome_cliente" name="nome_cliente" autocomplete="name"
+                            required {% if cliente %}value="{{ cliente.nome }}" {% endif %}>
                     </div>
                     <div class="field">
                         <label class="label" for="telefone_cliente">WhatsApp</label>
-                        <input class="input" type="tel" id="telefone_cliente" name="telefone_cliente" inputmode="tel" autocomplete="tel" placeholder="(31) 99999-9999" required {% if cliente %}value="{{ cliente.telefone }}"{% endif %}>
+                        <input class="input" type="tel" id="telefone_cliente" name="telefone_cliente" inputmode="tel"
+                            autocomplete="tel" placeholder="(31) 99999-9999" required {% if cliente
+                            %}value="{{ cliente.telefone }}" {% endif %}>
                     </div>
                 </div>
 
@@ -104,17 +168,22 @@
                     <p class="section-label">Como você quer receber</p>
                     <div class="segmented" role="radiogroup" aria-label="Tipo de pedido">
                         <label>
-                            <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" {% if not cliente or cliente.preferencia_entrega != 'ENTREGA' %}checked{% endif %}>
+                            <input type="radio" name="tipo_pedido" value="RETIRADA" id="tipo_retirada" {% if not cliente
+                                or cliente.preferencia_entrega !='ENTREGA' %}checked{% endif %}>
                             <span>{{ icon('walk') }}Retirar</span>
                         </label>
                         <label>
-                            <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega" {% if cliente and cliente.preferencia_entrega == 'ENTREGA' %}checked{% endif %}>
+                            <input type="radio" name="tipo_pedido" value="ENTREGA" id="tipo_entrega" {% if cliente and
+                                cliente.preferencia_entrega=='ENTREGA' %}checked{% endif %}>
                             <span>{{ icon('bike') }}Entrega</span>
                         </label>
                     </div>
-                    <div class="field" id="campo_endereco" style="margin-top: 14px;" {% if not (cliente and cliente.preferencia_entrega == 'ENTREGA') %}hidden{% endif %}>
+                    <div class="field" id="campo_endereco" style="margin-top: 14px;" {% if not (cliente and
+                        cliente.preferencia_entrega=='ENTREGA' ) %}hidden{% endif %}>
                         <label class="label" for="endereco_cliente">Endereço completo</label>
-                        <input class="input" type="text" id="endereco_cliente" name="endereco_cliente" autocomplete="street-address" placeholder="Rua, número, bairro e complemento" {% if cliente %}value="{{ cliente.endereco_padrao or '' }}"{% endif %}>
+                        <input class="input" type="text" id="endereco_cliente" name="endereco_cliente"
+                            autocomplete="street-address" placeholder="Rua, número, bairro e complemento" {% if cliente
+                            %}value="{{ cliente.endereco_padrao or '' }}" {% endif %}>
                     </div>
                 </div>
 
@@ -132,16 +201,19 @@
                     </div>
                     <div class="field" id="campo_troco" hidden>
                         <label class="label" for="troco_para">Troco para <span class="opt">(opcional)</span></label>
-                        <input class="input" type="text" id="troco_para" name="troco_para" inputmode="decimal" placeholder="Ex: 50,00">
+                        <input class="input" type="text" id="troco_para" name="troco_para" inputmode="decimal"
+                            placeholder="Ex: 50,00">
                     </div>
                     <div class="field">
                         <label class="label" for="observacoes">Observações <span class="opt">(opcional)</span></label>
-                        <textarea class="textarea" id="observacoes" name="observacoes" rows="2" placeholder="Sem cebola, molho à parte, interfone 302…"></textarea>
+                        <textarea class="textarea" id="observacoes" name="observacoes" rows="2"
+                            placeholder="Menos arroz, mandar talher, interfone 302…"></textarea>
                     </div>
                 </div>
 
                 {% if loja_aberta %}
-                <button type="submit" id="btn-finalizar" class="btn btn-primary btn-lg btn-block">Finalizar pedido</button>
+                <button type="submit" id="btn-finalizar" class="btn btn-primary btn-lg btn-block">Finalizar
+                    pedido</button>
                 {% else %}
                 <button type="button" class="btn btn-lg btn-block" disabled>Fechado no momento</button>
                 {% endif %}
