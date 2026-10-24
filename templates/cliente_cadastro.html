@@ -32,7 +32,12 @@
 
             <div class="field">
                 <label class="label" for="senha">Crie uma senha</label>
-                <input class="input" type="password" id="senha" name="senha" required placeholder="Mínimo de 4 caracteres" autocomplete="new-password">
+                <div class="input-password-wrap">
+                    <input class="input" type="password" id="senha" name="senha" required placeholder="Mínimo de 4 caracteres" autocomplete="new-password">
+                    <button type="button" class="btn-toggle-pass" onclick="togglePass('senha', this)" aria-label="Mostrar ou ocultar senha" title="Ver senha">
+                        {{ icon('eye') }}
+                    </button>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px;">
@@ -46,4 +51,19 @@
         </div>
     </div>
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePass(id, btn) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    btn.innerHTML = `<svg class="icon"><use href="#i-${isPass ? 'eye-off' : 'eye'}"></use></svg>`;
+    btn.setAttribute('aria-pressed', isPass ? 'true' : 'false');
+    btn.setAttribute('title', isPass ? 'Ocultar senha' : 'Ver senha');
+    input.focus();
+}
+</script>
 {% endblock %}

@@ -32,7 +32,12 @@
 
                 <div class="field">
                     <label class="label" for="senha">Senha de Administrador</label>
-                    <input class="input" type="password" id="senha" name="senha" required autofocus placeholder="Digite sua senha" autocomplete="current-password">
+                    <div class="input-password-wrap">
+                        <input class="input" type="password" id="senha" name="senha" required autofocus placeholder="Digite sua senha" autocomplete="current-password">
+                        <button type="button" class="btn-toggle-pass" onclick="togglePass('senha', this)" aria-label="Mostrar ou ocultar senha" title="Ver senha">
+                            {{ icon('eye') }}
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px;">
@@ -47,5 +52,18 @@
             </div>
         </div>
     </div>
+
+    <script>
+    function togglePass(id, btn) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        btn.innerHTML = `<svg class="icon"><use href="#i-${isPass ? 'eye-off' : 'eye'}"></use></svg>`;
+        btn.setAttribute('aria-pressed', isPass ? 'true' : 'false');
+        btn.setAttribute('title', isPass ? 'Ocultar senha' : 'Ver senha');
+        input.focus();
+    }
+    </script>
 </body>
 </html>

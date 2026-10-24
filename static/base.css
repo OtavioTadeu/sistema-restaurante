@@ -283,6 +283,42 @@ input[type="file"].input::file-selector-button {
 }
 .hint { display: block; margin-top: 6px; font-size: 0.8rem; color: var(--text-3); }
 
+/* Campo de senha com botão de visualização */
+.input-password-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.input-password-wrap .input {
+    padding-right: 46px;
+}
+.input-password-wrap .btn-toggle-pass {
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    bottom: 3px;
+    width: 40px;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-sm);
+    transition: color .15s, background-color .15s;
+    padding: 0;
+}
+.input-password-wrap .btn-toggle-pass:hover {
+    color: var(--yellow);
+    background-color: var(--ink-2);
+}
+.input-password-wrap .btn-toggle-pass:focus-visible {
+    outline: 2px solid var(--yellow);
+    outline-offset: -2px;
+}
+
 /* Segmentado (Retirada/Entrega) */
 .segmented {
     display: grid;
