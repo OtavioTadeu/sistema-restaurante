@@ -429,11 +429,13 @@ def admin_cardapio():
     try:
         pratos_catalogo = Prato.query.all()
         cardapio_hoje = CardapioDoDia.query.options(db.joinedload(CardapioDoDia.prato)).all()
+        bebidas = Bebida.query.order_by(Bebida.nome).all()
     except Exception as e:
         logger.error(f"Erro ao carregar cardápio: {e}")
         pratos_catalogo = []
         cardapio_hoje = []
-    return render_template('admin_cardapio.html', pratos_catalogo=pratos_catalogo, cardapio_hoje=cardapio_hoje)
+        bebidas = []
+    return render_template('admin_cardapio.html', pratos_catalogo=pratos_catalogo, cardapio_hoje=cardapio_hoje, bebidas=bebidas)
 
 @app.route('/admin/add_tamanho', methods=['POST'])
 @login_required
@@ -566,12 +568,13 @@ def add_bebida():
         nova_bebida = Bebida(nome=nome, descricao=descricao, preco=preco, foto_url=foto_url, disponivel=True)
         db.session.add(nova_bebida)
         db.session.commit()
-        flash('Bebida adicionada ao catálogo com sucesso.', 'success')
+        flash('Bebida adicionada com sucesso. Ela já está visível no Cardápio do Dia!', 'success')
     except Exception as e:
         db.session.rollback()
         logger.error(f"Erro ao adicionar bebida: {e}")
         flash('Erro ao adicionar bebida. Verifique os dados e tente novamente.', 'error')
-    return redirect(url_for('admin_bebidas'))
+    next_url = request.form.get('next') or url_for('admin_bebidas')
+    return redirect(next_url)
 
 @app.route('/admin/bebidas/<int:bebida_id>/toggle', methods=['POST'])
 @login_required
@@ -582,11 +585,13 @@ def toggle_disponivel_bebida(bebida_id):
             bebida.disponivel = not bebida.disponivel
             db.session.commit()
             estado = "disponível" if bebida.disponivel else "esgotada"
-            flash(f"Bebida marcada como {estado}.", 'success')
+            flash(f"Bebida '{bebida.nome}' marcada como {estado}.", 'success')
     except Exception as e:
         db.session.rollback()
         logger.error(f"Erro ao alternar status da bebida {bebida_id}: {e}")
-    return redirect(url_for('admin_bebidas'))
+        flash('Erro ao alterar status da bebida.', 'error')
+    next_url = request.form.get('next') or request.referrer or url_for('admin_bebidas')
+    return redirect(next_url)
 
 @app.route('/admin/bebidas/<int:bebida_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -606,7 +611,8 @@ def edit_bebida(bebida_id):
 
             db.session.commit()
             flash('Bebida atualizada com sucesso.', 'success')
-            return redirect(url_for('admin_bebidas'))
+            next_url = request.form.get('next') or url_for('admin_bebidas')
+            return redirect(next_url)
         except Exception as e:
             db.session.rollback()
             logger.error(f"Erro ao editar bebida {bebida_id}: {e}")
@@ -626,7 +632,8 @@ def delete_bebida(bebida_id):
         db.session.rollback()
         logger.error(f"Erro ao excluir bebida {bebida_id}: {e}")
         flash('Não é possível excluir esta bebida pois ela já está vinculada a pedidos históricos. Você pode marcá-la como esgotada.', 'error')
-    return redirect(url_for('admin_bebidas'))
+    next_url = request.form.get('next') or request.referrer or url_for('admin_bebidas')
+    return redirect(next_url)
 
 @app.route('/admin/add_cardapio', methods=['POST'])
 @login_required
