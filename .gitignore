@@ -36,6 +36,7 @@ pedidos_impressos/
 static/uploads/
 
 # --- Configuração Sensível e Binários ---
+.neon
 config.json
 cloudflared.exe
 ngrok.exe
