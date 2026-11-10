@@ -118,6 +118,8 @@
                                 {% for item in pedido.itens %}
                                     {% if item.bebida %}
                                         { qtd: {{ item.quantidade }}, prato: '{{ item.bebida.nome|escape }}', tam: '', preco: {{ item.preco_unitario_pago }} },
+                                    {% elif item.lanche %}
+                                        { qtd: {{ item.quantidade }}, prato: '{{ item.lanche.nome|escape }}', tam: '', preco: {{ item.preco_unitario_pago }} },
                                     {% else %}
                                         { qtd: {{ item.quantidade }}, prato: '{{ (item.prato.nome_prato if item.prato else 'Item')|escape }}', tam: '{{ (item.tamanho.nome if item.tamanho else '')|escape }}', preco: {{ item.preco_unitario_pago }} },
                                     {% endif %}

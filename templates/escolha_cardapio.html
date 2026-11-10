@@ -1,0 +1,136 @@
+{% extends 'base_client.html' %}
+{% from 'partials/_ui.html' import icon %}
+
+{% block title %}Escolha o Cardápio — Dogão do Castelo{% endblock %}
+
+{% block statusbar %}
+<div class="statusbar {{ '' if (almoco_aberto or lanches_aberto) else 'is-closed' }}" role="status">
+    <div class="container">
+        <span class="dot" aria-hidden="true"></span>
+        {% if almoco_aberto and lanches_aberto %}
+            <strong>Aberto agora</strong>
+            <span>Almoço e Lanches disponíveis para pedido</span>
+        {% elif almoco_aberto %}
+            <strong>Almoço aberto agora</strong>
+            <span>Atendimento das {{ horario_almoco_inicio }} às {{ horario_almoco_fim }} · Lanches a partir das {{ horario_lanches_inicio }}</span>
+        {% elif lanches_aberto %}
+            <strong>Lanches abertos agora</strong>
+            <span>Atendimento das {{ horario_lanches_inicio }} às {{ horario_lanches_fim }} · Almoço das {{ horario_almoco_inicio }} às {{ horario_almoco_fim }}</span>
+        {% else %}
+            <strong>Fechado no momento</strong>
+            <span>Almoço: {{ horario_almoco_inicio }} às {{ horario_almoco_fim }} · Lanches: {{ horario_lanches_inicio }} às {{ horario_lanches_fim }}</span>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<main class="container">
+    <div class="page-head">
+        <div>
+            <p class="eyebrow">Bem-vindo ao Dogão do Castelo</p>
+            <h1>Escolha o <em>Cardápio</em></h1>
+        </div>
+        <p class="meta">
+            <strong>{{ data_hoje }}</strong>
+            {% if cliente %}Olá, {{ cliente.nome.split()[0] }}! O que você deseja pedir hoje?{% else %}Selecione abaixo entre Almoço ou Lanches.{% endif %}
+        </p>
+    </div>
+
+    <div class="hub-grid">
+        <!-- Opção 1: Cardápio do Almoço -->
+        <a href="{{ url_for('cardapio_almoco') }}" class="hub-card {% if almoco_aberto %}is-open{% else %}is-closed{% endif %}">
+            <div class="hub-card-top">
+                <div class="hub-icon">
+                    {{ icon('utensils') }}
+                </div>
+                <div class="hub-badges">
+                    {% if almoco_aberto %}
+                        <span class="tag tag-yellow">● Aberto Agora</span>
+                    {% else %}
+                        <span class="tag tag-red">● Fechado no momento</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="hub-card-body">
+                <span class="eyebrow" style="margin-bottom: 4px; display: block;">Restaurante · Dia</span>
+                <h2>Cardápio do <em>Almoço</em></h2>
+                <p class="hub-desc">
+                    Pratos caseiros preparados diariamente, marmitex nos tamanhos disponíveis com acompanhamentos fresquinhos e bebidas geladas.
+                </p>
+
+                <div class="hub-hours">
+                    {{ icon('clock') }}
+                    <span>Horário de atendimento: <strong>{{ horario_almoco_inicio }} às {{ horario_almoco_fim }}</strong></span>
+                </div>
+
+                {% if not almoco_aberto %}
+                <div class="hub-closed-msg">
+                    <span>{{ msg_almoco_fechado }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="hub-card-foot">
+                {% if almoco_aberto %}
+                    <span class="btn btn-primary btn-lg btn-block">
+                        <span>Acessar Cardápio do Almoço</span>
+                    </span>
+                {% else %}
+                    <span class="btn btn-ghost btn-lg btn-block" style="border-color: var(--line-strong);">
+                        <span>Ver Cardápio do Almoço</span>
+                    </span>
+                {% endif %}
+            </div>
+        </a>
+
+        <!-- Opção 2: Cardápio de Lanches -->
+        <a href="{{ url_for('cardapio_lanches') }}" class="hub-card {% if lanches_aberto %}is-open{% else %}is-closed{% endif %}">
+            <div class="hub-card-top">
+                <div class="hub-icon">
+                    {{ icon('dog') }}
+                </div>
+                <div class="hub-badges">
+                    {% if lanches_aberto %}
+                        <span class="tag tag-yellow">● Aberto Agora</span>
+                    {% else %}
+                        <span class="tag tag-red">● Fechado no momento</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="hub-card-body">
+                <span class="eyebrow" style="margin-bottom: 4px; display: block;">Lanchonete · Noite</span>
+                <h2>Cardápio de <em>Lanches</em></h2>
+                <p class="hub-desc">
+                    Nossos tradicionais cachorros-quentes e lanches especiais preparados na chapa, acompanhados de refrigerantes e sucos.
+                </p>
+
+                <div class="hub-hours">
+                    {{ icon('clock') }}
+                    <span>Horário de atendimento: <strong>{{ horario_lanches_inicio }} às {{ horario_lanches_fim }}</strong></span>
+                </div>
+
+                {% if not lanches_aberto %}
+                <div class="hub-closed-msg">
+                    <span>{{ msg_lanches_fechado }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="hub-card-foot">
+                {% if lanches_aberto %}
+                    <span class="btn btn-primary btn-lg btn-block">
+                        <span>Acessar Cardápio de Lanches</span>
+                    </span>
+                {% else %}
+                    <span class="btn btn-ghost btn-lg btn-block" style="border-color: var(--line-strong);">
+                        <span>Ver Cardápio de Lanches</span>
+                    </span>
+                {% endif %}
+            </div>
+        </a>
+    </div>
+</main>
+{% endblock %}

@@ -6,9 +6,12 @@
 {% block content %}
 <div class="admin-header">
     <div>
-        <p class="eyebrow">Preferências & Segurança</p>
+        <p class="eyebrow">Preferências &amp; Segurança</p>
         <h1>Configurações do Sistema</h1>
-        <p>Gerencie o status de funcionamento da loja, taxas de entrega, número do WhatsApp e credenciais de acesso.</p>
+        <p>Gerencie os horários e o funcionamento do Almoço e dos Lanches, taxas de entrega, WhatsApp e senha de acesso.</p>
+    </div>
+    <div class="row" style="gap: 8px;">
+        <span class="subtle" style="font-size: 0.82rem;">Horário atual (Brasília): <strong style="color: var(--white);">{{ hora_atual_br }}</strong></span>
     </div>
 </div>
 
@@ -23,41 +26,100 @@
 {% endif %}
 
 <div class="admin-grid-2">
-    <!-- Operação da Loja -->
+    <!-- Operação dos Turnos (Almoço e Lanches) + Entregas -->
     <section class="card">
         <div class="card-title">
             <div class="row">
                 {{ icon('store') }}
-                <h2>Operação da Lanchonete</h2>
+                <h2>Funcionamento &amp; Horários</h2>
             </div>
-            {% if loja_aberta %}
-                <span class="tag tag-yellow">Aberta</span>
-            {% else %}
-                <span class="tag tag-red">Fechada</span>
-            {% endif %}
         </div>
 
         <form action="{{ url_for('admin_configuracoes') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="acao" value="atualizar_loja">
 
-            <div class="field" style="padding: 16px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 20px;">
-                <label class="switch">
-                    <input type="checkbox" name="loja_aberta" {% if loja_aberta %}checked{% endif %}>
-                    <span class="switch-track"></span>
-                    <span class="switch-text">
-                        <strong>Recebimento de Pedidos Online</strong>
-                        <small>Quando desativado, o cardápio público continuará visível para consulta, porém o envio de novos pedidos ficará bloqueado.</small>
-                    </span>
-                </label>
+            <!-- Bloco 1: Turno do Almoço -->
+            <div style="padding: 18px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                    <div class="row" style="gap: 8px;">
+                        {{ icon('utensils') }}
+                        <strong style="font-size: 1.05rem; color: var(--white);">1. Atendimento do Almoço (Dia)</strong>
+                    </div>
+                    {% if almoco_aberto %}
+                        <span class="tag tag-yellow">Aberto Agora</span>
+                    {% else %}
+                        <span class="tag tag-red">Fechado Agora</span>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="modo_almoco">Modo de Funcionamento do Almoço</label>
+                    <select class="select" id="modo_almoco" name="modo_almoco">
+                        <option value="AUTOMATICO" {% if modo_almoco == 'AUTOMATICO' %}selected{% endif %}>Automático (abre e fecha pelo horário abaixo)</option>
+                        <option value="ABERTO" {% if modo_almoco == 'ABERTO' %}selected{% endif %}>Forçar ABERTO agora (manual)</option>
+                        <option value="FECHADO" {% if modo_almoco == 'FECHADO' %}selected{% endif %}>Forçar FECHADO agora (manual)</option>
+                    </select>
+                </div>
+
+                <div class="admin-grid-2" style="gap: 12px;">
+                    <div class="field">
+                        <label class="label" for="horario_almoco_inicio">Abertura do Almoço</label>
+                        <input class="input num" type="time" id="horario_almoco_inicio" name="horario_almoco_inicio" value="{{ horario_almoco_inicio }}" required>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="horario_almoco_fim">Encerramento do Almoço</label>
+                        <input class="input num" type="time" id="horario_almoco_fim" name="horario_almoco_fim" value="{{ horario_almoco_fim }}" required>
+                    </div>
+                </div>
+
+                <div class="field" style="margin-bottom: 0;">
+                    <label class="label" for="msg_almoco_fechado">Mensagem quando o Almoço estiver fechado</label>
+                    <input class="input" type="text" id="msg_almoco_fechado" name="msg_almoco_fechado" value="{{ msg_almoco_fechado }}" placeholder="Ex: O atendimento do almoço funciona das 11h às 14h30.">
+                </div>
             </div>
 
-            <div class="field">
-                <label class="label" for="mensagem_loja_fechada">Mensagem de Loja Fechada</label>
-                <textarea class="textarea" id="mensagem_loja_fechada" name="mensagem_loja_fechada" rows="2" placeholder="Ex: Estamos fechados no momento. Nosso horário de atendimento é de terça a domingo das 18h às 23h30.">{{ mensagem_loja_fechada }}</textarea>
-                <span class="hint">Exibida em destaque no topo do cardápio público para os clientes quando a loja estiver fechada.</span>
+            <!-- Bloco 2: Turno de Lanches -->
+            <div style="padding: 18px; background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                    <div class="row" style="gap: 8px;">
+                        {{ icon('dog') }}
+                        <strong style="font-size: 1.05rem; color: var(--white);">2. Atendimento de Lanches (Noite)</strong>
+                    </div>
+                    {% if lanches_aberto %}
+                        <span class="tag tag-yellow">Aberto Agora</span>
+                    {% else %}
+                        <span class="tag tag-red">Fechado Agora</span>
+                    {% endif %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="modo_lanches">Modo de Funcionamento dos Lanches</label>
+                    <select class="select" id="modo_lanches" name="modo_lanches">
+                        <option value="AUTOMATICO" {% if modo_lanches == 'AUTOMATICO' %}selected{% endif %}>Automático (abre e fecha pelo horário abaixo)</option>
+                        <option value="ABERTO" {% if modo_lanches == 'ABERTO' %}selected{% endif %}>Forçar ABERTO agora (manual)</option>
+                        <option value="FECHADO" {% if modo_lanches == 'FECHADO' %}selected{% endif %}>Forçar FECHADO agora (manual)</option>
+                    </select>
+                </div>
+
+                <div class="admin-grid-2" style="gap: 12px;">
+                    <div class="field">
+                        <label class="label" for="horario_lanches_inicio">Abertura dos Lanches</label>
+                        <input class="input num" type="time" id="horario_lanches_inicio" name="horario_lanches_inicio" value="{{ horario_lanches_inicio }}" required>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="horario_lanches_fim">Encerramento dos Lanches</label>
+                        <input class="input num" type="time" id="horario_lanches_fim" name="horario_lanches_fim" value="{{ horario_lanches_fim }}" required>
+                    </div>
+                </div>
+
+                <div class="field" style="margin-bottom: 0;">
+                    <label class="label" for="msg_lanches_fechado">Mensagem quando os Lanches estiverem fechados</label>
+                    <input class="input" type="text" id="msg_lanches_fechado" name="msg_lanches_fechado" value="{{ msg_lanches_fechado }}" placeholder="Ex: Os lanches são servidos a partir das 18h.">
+                </div>
             </div>
 
+            <!-- Taxa e WhatsApp -->
             <div class="field">
                 <label class="label" for="taxa_entrega">Taxa de Entrega Padrão (R$)</label>
                 <input class="input num" type="number" step="0.50" min="0" id="taxa_entrega" name="taxa_entrega" value="{{ '%.2f'|format(taxa_entrega_padrao) }}" required>
@@ -65,7 +127,7 @@
             </div>
 
             <div class="field">
-                <label class="label" for="restaurante_whatsapp">WhatsApp do Restaurante</label>
+                <label class="label" for="restaurante_whatsapp">WhatsApp do Estabelecimento</label>
                 <input class="input num" type="text" id="restaurante_whatsapp" name="restaurante_whatsapp" value="{{ restaurante_whatsapp }}" placeholder="5531999999999" required>
                 <span class="hint">Número com código do país (55) e DDD para onde o cliente será direcionado no fechamento do pedido.</span>
             </div>
@@ -73,7 +135,7 @@
             <div style="margin-top: 24px;">
                 <button type="submit" class="btn btn-primary btn-block">
                     {{ icon('check') }}
-                    <span>Salvar Configurações da Loja</span>
+                    <span>Salvar Configurações de Funcionamento</span>
                 </button>
             </div>
         </form>
@@ -86,7 +148,7 @@
             <div class="card-title">
                 <div class="row">
                     {{ icon('lock') }}
-                    <h2>Segurança & Acesso</h2>
+                    <h2>Segurança &amp; Acesso</h2>
                 </div>
             </div>
 

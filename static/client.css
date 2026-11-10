@@ -206,11 +206,17 @@
     font-size: 1.55rem;
     line-height: 1;
 }
-.drink-buy .btn-add-drink {
+.drink-buy .btn-add-drink,
+.drink-buy .btn-add-lanche {
     min-height: 38px;
     padding: 8px 16px;
     font-size: 0.88rem;
     font-weight: 700;
+}
+.drink-buy .btn-add-drink.is-added,
+.drink-buy .btn-add-lanche.is-added {
+    background: var(--white);
+    color: var(--black);
 }
 
 .empty {
@@ -516,6 +522,163 @@
 }
 .ticket-total .price { font-size: 1.4rem; }
 
+/* ---------- Tela de Escolha do Cardápio (Hub Almoço / Lanches) ---------- */
+.hub-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    padding-bottom: 64px;
+}
+.hub-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--ink-1);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    padding: 28px;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.hub-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--yellow);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .45);
+}
+.hub-card.is-open {
+    border-color: var(--yellow-line);
+}
+.hub-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.hub-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    background: var(--ink-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    color: var(--yellow);
+}
+.hub-card.is-open .hub-icon {
+    background: var(--yellow);
+    color: var(--yellow-ink);
+    border-color: var(--yellow);
+}
+.hub-icon .icon {
+    width: 28px;
+    height: 28px;
+}
+.hub-card-body {
+    flex: 1;
+}
+.hub-card-body h2 {
+    font-size: clamp(2.1rem, 4vw, 2.8rem);
+    line-height: .95;
+    margin: 0 0 10px;
+    color: var(--white);
+}
+.hub-card-body h2 em {
+    font-style: normal;
+    color: var(--yellow);
+}
+.hub-desc {
+    color: var(--text-2);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 18px;
+}
+.hub-hours {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    font-size: 0.85rem;
+    color: var(--text-2);
+}
+.hub-hours .icon {
+    width: 16px;
+    height: 16px;
+    color: var(--yellow);
+}
+.hub-hours strong {
+    color: var(--white);
+}
+.hub-closed-msg {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--red-soft);
+    border: 1px solid rgba(255, 90, 82, .35);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    font-size: 0.85rem;
+}
+.hub-card-foot {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+
+/* ---------- Banner de Turno Fechado (Modo Vitrine) ---------- */
+.shift-closed-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    background: var(--ink-1);
+    border: 1px solid rgba(255, 90, 82, .5);
+    border-left: 4px solid var(--red);
+    border-radius: var(--r-md);
+}
+.shift-closed-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1;
+    min-width: 260px;
+}
+.shift-closed-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    background: var(--red-soft);
+    color: var(--red);
+    border-radius: var(--r-sm);
+}
+.shift-closed-icon .icon {
+    width: 24px;
+    height: 24px;
+}
+.shift-closed-content h2 {
+    font-size: 1.55rem;
+    color: var(--white);
+    margin: 0 0 4px;
+}
+.shift-closed-content p {
+    margin: 0;
+    color: var(--text-2);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+.shift-closed-actions {
+    flex-shrink: 0;
+}
+
 /* ---------- Rodapé ---------- */
 .site-footer {
     border-top: 1px solid var(--line);
@@ -532,6 +695,7 @@
     .cart-bar.is-visible { display: flex; }
     body.has-cart-bar { padding-bottom: 84px; }
     .account { grid-template-columns: 1fr; }
+    .hub-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
     .container { padding: 0 14px; }

@@ -99,6 +99,8 @@
                             <li>
                                 {% if item.bebida %}
                                     <span>{{ item.quantidade }}x {{ item.bebida.nome }}</span>
+                                {% elif item.lanche %}
+                                    <span>{{ item.quantidade }}x {{ item.lanche.nome }}</span>
                                 {% else %}
                                     <span>{{ item.quantidade }}x {{ item.prato.nome_prato if item.prato else 'Item' }} {% if item.tamanho %}<small class="subtle">({{ item.tamanho.nome }})</small>{% endif %}</span>
                                 {% endif %}

@@ -1,34 +1,142 @@
 {% extends 'base_client.html' %}
 {% from 'partials/_ui.html' import icon %}
 
-{% block title %}Cardápio de Hoje — Dogão do Castelo{% endblock %}
+{% block title %}{% if turno == 'lanches' %}Cardápio de Lanches{% else %}Cardápio do Almoço{% endif %} — Dogão do Castelo{% endblock %}
+
+{% block extra_css %}
+<meta name="turno-cardapio" content="{{ turno or 'almoco' }}">
+{% endblock %}
+
+{% block statusbar %}
+<div class="statusbar {{ '' if loja_aberta else 'is-closed' }}" role="status">
+    <div class="container" style="justify-content: space-between; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="dot" aria-hidden="true"></span>
+            {% if loja_aberta %}
+                <strong>{% if turno == 'lanches' %}Lanches abertos agora{% else %}Almoço aberto agora{% endif %}</strong>
+                <span>Horário: {{ horario_turno }} · Retirada e entrega</span>
+            {% else %}
+                <strong>{% if turno == 'lanches' %}Lanches fechados{% else %}Almoço fechado{% endif %}</strong>
+                <span>{{ mensagem_loja_fechada }} ({{ horario_turno }})</span>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('cardapio') }}" style="color: inherit; font-weight: 700; text-decoration: underline; font-size: 0.78rem;">
+            ← Trocar entre Almoço e Lanches
+        </a>
+    </div>
+</div>
+{% endblock %}
 
 {% block content %}
 <main class="container">
-    <div class="page-head">
+    <div style="margin-top: 22px;">
+        <a href="{{ url_for('cardapio') }}" class="btn btn-ghost btn-sm">
+            {{ icon('arrow-left') }}
+            <span>Voltar para escolha de cardápio (Almoço / Lanches)</span>
+        </a>
+    </div>
+
+    <div class="page-head" style="padding-top: 18px;">
         <div>
-            <p class="eyebrow">Peça online</p>
-            <h1>Cardápio <em>de hoje</em></h1>
+            <p class="eyebrow">{% if turno == 'lanches' %}Lanchonete · Noite{% else %}Restaurante · Dia{% endif %}</p>
+            {% if turno == 'lanches' %}
+                <h1>Cardápio de <em>Lanches</em></h1>
+            {% else %}
+                <h1>Cardápio do <em>Almoço</em></h1>
+            {% endif %}
         </div>
         <p class="meta">
             <strong>{{ data_hoje }}</strong>
-            {% if cliente %}Bom te ver de novo, {{ cliente.nome.split()[0] }}.{% else %}Retirada no balcão ou entrega.{%
-            endif %}
+            {% if cliente %}Bom te ver de novo, {{ cliente.nome.split()[0] }}.{% else %}Horário deste cardápio: {{ horario_turno }}{% endif %}
         </p>
     </div>
 
+    {% if not loja_aberta %}
+    <div class="shift-closed-banner" role="alert">
+        <div class="shift-closed-content">
+            <div class="shift-closed-icon">
+                {{ icon('clock') }}
+            </div>
+            <div>
+                <h2>
+                    {% if turno == 'lanches' %}
+                        Estamos fora do horário de atendimento de Lanches
+                    {% else %}
+                        Estamos fora do horário de atendimento do Almoço
+                    {% endif %}
+                </h2>
+                <p>{{ mensagem_loja_fechada }} Nosso horário para este cardápio é das <strong>{{ horario_turno }}</strong>.</p>
+                <p class="subtle" style="margin: 4px 0 0; font-size: 0.84rem;">Você pode visualizar os itens e preços abaixo, mas o envio de pedidos para este turno está desativado no momento.</p>
+            </div>
+        </div>
+        <div class="shift-closed-actions">
+            <a href="{{ url_for('cardapio') }}" class="btn btn-primary">
+                {{ icon('arrow-left') }}
+                <span>Voltar para escolha entre Restaurante e Lanchonete</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="category-tabs" role="tablist" aria-label="Categorias do cardápio">
         <button type="button" class="category-tab is-active" id="tab-pratos" role="tab" aria-selected="true" aria-controls="section-pratos">
-            {{ icon('dog') }}<span>Pratos</span>
+            {% if turno == 'lanches' %}
+                {{ icon('dog') }}<span>Lanches</span>
+            {% else %}
+                {{ icon('utensils') }}<span>Pratos do Dia</span>
+            {% endif %}
         </button>
         <button type="button" class="category-tab" id="tab-bebidas" role="tab" aria-selected="false" aria-controls="section-bebidas">
-            {{ icon('drink') }}<span>Bebidas & Refrigerantes</span>
+            {{ icon('drink') }}<span>Bebidas &amp; Refrigerantes</span>
         </button>
     </div>
 
     <div class="shop">
         <div class="shop-catalog">
             <section id="section-pratos" aria-labelledby="titulo-pratos">
+                {% if turno == 'lanches' %}
+                <h2 id="titulo-pratos" class="sr-only">Lanches</h2>
+                <div class="menu">
+                    {% for lanche in lanches %}
+                    <article class="dish">
+                        {% if lanche.foto_url %}
+                        <div class="dish-photo">
+                            <img src="{{ lanche.foto_url }}" alt="{{ lanche.nome }}" loading="lazy">
+                        </div>
+                        {% else %}
+                        <div class="dish-photo is-empty" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="54" height="54" fill="none" stroke="currentColor" stroke-width="1.6">
+                                <path d="M3 13c0-2 2-3 4-3h10c2 0 4 1 4 3s-2 3-4 3H7c-2 0-4-1-4-3z"/>
+                                <path d="M5 12.5c3 1 11 1 14 0"/>
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        <div class="dish-body">
+                            <h3>{{ lanche.nome }}</h3>
+                            {% if lanche.descricao %}<p class="dish-desc">{{ lanche.descricao }}</p>{% endif %}
+                        </div>
+
+                        <div class="drink-buy">
+                            <span class="price">R$ {{ "%.2f"|format(lanche.preco)|replace('.', ',') }}</span>
+                            <button type="button" class="btn btn-primary btn-sm btn-add-lanche"
+                                data-lanche-id="{{ lanche.id }}"
+                                data-lanche-nome="{{ lanche.nome }}"
+                                data-preco="{{ lanche.preco }}"
+                                aria-label="Adicionar {{ lanche.nome }} à sacola"
+                                {% if not loja_aberta %}disabled title="Atendimento de lanches fechado no momento"{% endif %}>
+                                {{ icon('plus') }}<span>Adicionar</span>
+                            </button>
+                        </div>
+                    </article>
+                    {% else %}
+                    <div class="empty">
+                        <h3>O cardápio de lanches está sendo preparado</h3>
+                        <p class="mt-0">Os lanches disponíveis aparecem aqui em instantes.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
                 <h2 id="titulo-pratos" class="sr-only">Pratos do Dia</h2>
                 <div class="menu">
                     {% for item in cardapio_hoje %}
@@ -60,7 +168,7 @@
                                     data-prato-nome="{{ item.prato.nome_prato }}" data-tamanho-id="{{ tam.id }}"
                                     data-tamanho-nome="{{ tam.nome }}" data-preco="{{ tam.preco }}"
                                     aria-label="Adicionar {{ item.prato.nome_prato }} ({{ tam.nome }})" {% if not
-                                    loja_aberta %}disabled title="Estamos fechados no momento" {% endif %}>
+                                    loja_aberta %}disabled title="Atendimento do almoço fechado no momento" {% endif %}>
                                     {{ icon('plus') }}
                                 </button>
                             </li>
@@ -69,15 +177,16 @@
                     </article>
                     {% else %}
                     <div class="empty">
-                        <h3>O cardápio está sendo montado</h3>
+                        <h3>O cardápio do almoço está sendo montado</h3>
                         <p class="mt-0">Os pratos do dia aparecem aqui em instantes. Volte daqui a pouco.</p>
                     </div>
                     {% endfor %}
                 </div>
+                {% endif %}
             </section>
 
             <section id="section-bebidas" aria-labelledby="titulo-bebidas" hidden>
-                <h2 id="titulo-bebidas" class="sr-only">Bebidas & Refrigerantes</h2>
+                <h2 id="titulo-bebidas" class="sr-only">Bebidas &amp; Refrigerantes</h2>
                 <div class="menu">
                     {% for bebida in bebidas %}
                     <article class="dish">
@@ -107,7 +216,7 @@
                                 data-bebida-nome="{{ bebida.nome }}"
                                 data-preco="{{ bebida.preco }}"
                                 aria-label="Adicionar {{ bebida.nome }} à sacola"
-                                {% if not loja_aberta %}disabled title="Estamos fechados no momento"{% endif %}>
+                                {% if not loja_aberta %}disabled title="Estamos fechados neste turno no momento"{% endif %}>
                                 {{ icon('plus') }}<span>Adicionar</span>
                             </button>
                         </div>
@@ -146,7 +255,16 @@
 
             <form id="form-pedido" class="order-form" novalidate>
                 {% if not loja_aberta %}
-                <div class="closed-note">{{ icon('clock') }}<span>{{ mensagem_loja_fechada }}</span></div>
+                <div class="closed-note">
+                    {{ icon('clock') }}
+                    <div>
+                        <strong style="display: block; color: var(--red); margin-bottom: 2px;">Atendimento fechado neste turno</strong>
+                        <span>{{ mensagem_loja_fechada }} ({{ horario_turno }})</span>
+                        <div style="margin-top: 8px;">
+                            <a href="{{ url_for('cardapio') }}" style="color: var(--yellow); font-weight: 700; text-decoration: underline;">← Voltar e escolher outro cardápio</a>
+                        </div>
+                    </div>
+                </div>
                 {% endif %}
 
                 <div class="group">
@@ -207,7 +325,7 @@
                     <div class="field">
                         <label class="label" for="observacoes">Observações <span class="opt">(opcional)</span></label>
                         <textarea class="textarea" id="observacoes" name="observacoes" rows="2"
-                            placeholder="Menos arroz, mandar talher, interfone 302…"></textarea>
+                            placeholder="{% if turno == 'lanches' %}Sem cebola, mandar sachê, interfone 302…{% else %}Menos arroz, mandar talher, interfone 302…{% endif %}"></textarea>
                     </div>
                 </div>
 
@@ -215,7 +333,7 @@
                 <button type="submit" id="btn-finalizar" class="btn btn-primary btn-lg btn-block">Finalizar
                     pedido</button>
                 {% else %}
-                <button type="button" class="btn btn-lg btn-block" disabled>Fechado no momento</button>
+                <button type="button" class="btn btn-lg btn-block" disabled>Fechado neste horário</button>
                 {% endif %}
             </form>
         </aside>

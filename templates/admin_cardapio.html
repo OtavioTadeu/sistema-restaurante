@@ -6,9 +6,9 @@
 {% block content %}
 <div class="admin-header">
     <div>
-        <p class="eyebrow">Oferta do dia</p>
+        <p class="eyebrow">Oferta do dia &amp; noite</p>
         <h1>Cardápio do Dia</h1>
-        <p>Defina quais pratos do catálogo e bebidas estarão disponíveis para os clientes hoje.</p>
+        <p>Defina quais pratos do almoço, lanches da noite e bebidas estarão disponíveis para os clientes.</p>
     </div>
 </div>
 
@@ -162,6 +162,99 @@
     </div>
 </section>
 
+<!-- Listagem dos Lanches da Noite -->
+<section class="card" style="padding: 0; overflow: hidden; margin-top: 28px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 12px;">
+        <div class="row" style="display: flex; align-items: center; gap: 12px;">
+            <h2 style="font-size: 1.5rem; margin: 0;">Lanches da Noite</h2>
+            <span class="tag tag-yellow-outline num">{{ lanches|length }} cadastrado(s)</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalNovoLanche()">
+                {{ icon('plus') }}
+                <span>Adicionar Lanche</span>
+            </button>
+            <a href="{{ url_for('admin_lanches') }}" class="btn btn-secondary btn-sm" title="Ir para tela de catálogo de lanches">
+                {{ icon('dog') }}
+                <span>Catálogo</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive" style="border: 0; border-radius: 0;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 56px;">Foto</th>
+                    <th>Lanche</th>
+                    <th>Ingredientes / Descrição</th>
+                    <th>Preço</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lanches %}
+                <tr>
+                    <td>
+                        {% if l.foto_url %}
+                            <img src="{{ l.foto_url }}" alt="{{ l.nome }}" style="width: 42px; height: 42px; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line-strong);">
+                        {% else %}
+                            <div style="width: 42px; height: 42px; background: var(--surface); border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; color: var(--text-3); border: 1px solid var(--line);">
+                                {{ icon('dog') }}
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color: var(--white); font-size: 1rem;">{{ l.nome }}</strong>
+                    </td>
+                    <td>
+                        <span class="subtle">{{ l.descricao or '—' }}</span>
+                    </td>
+                    <td>
+                        <strong class="price" style="font-size: 1.2rem;">R$ {{ "%.2f"|format(l.preco)|replace('.', ',') }}</strong>
+                    </td>
+                    <td>
+                        {% if l.disponivel %}
+                            <span class="tag tag-yellow">Disponível</span>
+                        {% else %}
+                            <span class="tag tag-red">Esgotado</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <div class="actions-flex" style="justify-content: flex-end;">
+                            <form action="{{ url_for('toggle_disponivel_lanche', lanche_id=l.id) }}" method="POST" style="margin: 0;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="next" value="{{ url_for('admin_cardapio') }}">
+                                <button type="submit" class="btn btn-ghost btn-sm" title="Alternar entre disponível e esgotado">
+                                    {% if l.disponivel %}Marcar Esgotado{% else %}Marcar Disponível{% endif %}
+                                </button>
+                            </form>
+                            <a href="{{ url_for('edit_lanche', lanche_id=l.id, next=url_for('admin_cardapio')) }}" class="btn btn-ghost btn-sm" title="Editar dados do lanche">
+                                {{ icon('edit') }}
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 48px 20px; color: var(--text-3);">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <span style="font-size: 1rem; color: var(--text-2); font-weight: 600;">Nenhum lanche cadastrado ainda</span>
+                            <span style="font-size: 0.85rem;">Adicione seus lanches apenas uma vez; eles ficarão salvos para o cardápio da noite.</span>
+                            <button type="button" class="btn btn-primary btn-sm" style="margin-top: 10px;" onclick="abrirModalNovoLanche()">
+                                {{ icon('plus') }}
+                                <span>Cadastrar Primeiro Lanche</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
 <!-- Listagem das Bebidas no Cardápio do Dia -->
 <section class="card" style="padding: 0; overflow: hidden; margin-top: 28px;">
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid var(--line); flex-wrap: wrap; gap: 12px;">
@@ -297,11 +390,52 @@
         </form>
     </div>
 </div>
+<!-- Modal de Cadastro Rápido de Lanche -->
+<div id="modal-lanche-overlay" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-lanche-titulo">
+    <div class="modal-box" style="max-width: 520px;">
+        <div class="modal-head">
+            <h2 id="modal-lanche-titulo" style="font-size: 1.5rem; color: var(--yellow);">Cadastrar Novo Lanche</h2>
+            <button type="button" class="icon-btn" onclick="fecharModalNovoLanche()" aria-label="Fechar modal">
+                {{ icon('x') }}
+            </button>
+        </div>
+        <form action="{{ url_for('add_lanche') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ url_for('admin_cardapio') }}">
+            <div class="modal-body">
+                <div class="field">
+                    <label class="label" for="modal_lanche_nome">Nome do Lanche</label>
+                    <input class="input" type="text" id="modal_lanche_nome" name="nome" placeholder="Ex: Dogão Especial, X-Tudo" required>
+                </div>
+                <div class="field">
+                    <label class="label" for="modal_lanche_preco">Preço Unitário (R$)</label>
+                    <input class="input num" type="number" step="0.01" min="0" id="modal_lanche_preco" name="preco" placeholder="0.00" required>
+                </div>
+                <div class="field">
+                    <label class="label" for="modal_lanche_descricao">Ingredientes / Descrição <span class="opt">(opcional)</span></label>
+                    <input class="input" type="text" id="modal_lanche_descricao" name="descricao" placeholder="Ex: Pão, 2 salsichas, purê, batata palha, bacon">
+                </div>
+                <div class="field">
+                    <label class="label" for="modal_lanche_foto">Foto do Lanche <span class="opt">(opcional)</span></label>
+                    <input class="input" type="file" id="modal_lanche_foto" name="foto_arquivo" accept="image/*">
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="submit" class="btn btn-primary btn-block">
+                    {{ icon('plus') }}
+                    <span>Salvar Lanche</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-block" onclick="fecharModalNovoLanche()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     const modalBebida = document.getElementById('modal-bebida-overlay');
+    const modalLanche = document.getElementById('modal-lanche-overlay');
     function abrirModalNovaBebida() {
         if (modalBebida) {
             modalBebida.classList.add('is-open');
@@ -312,9 +446,24 @@
     function fecharModalNovaBebida() {
         if (modalBebida) modalBebida.classList.remove('is-open');
     }
+    function abrirModalNovoLanche() {
+        if (modalLanche) {
+            modalLanche.classList.add('is-open');
+            const inp = document.getElementById('modal_lanche_nome');
+            if (inp) setTimeout(() => inp.focus(), 80);
+        }
+    }
+    function fecharModalNovoLanche() {
+        if (modalLanche) modalLanche.classList.remove('is-open');
+    }
     if (modalBebida) {
         modalBebida.addEventListener('click', (e) => {
             if (e.target === modalBebida) fecharModalNovaBebida();
+        });
+    }
+    if (modalLanche) {
+        modalLanche.addEventListener('click', (e) => {
+            if (e.target === modalLanche) fecharModalNovoLanche();
         });
     }
     function focarAdicionarPrato() {
@@ -332,7 +481,10 @@
         }
     }
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') fecharModalNovaBebida();
+        if (e.key === 'Escape') {
+            fecharModalNovaBebida();
+            fecharModalNovoLanche();
+        }
     });
 </script>
 {% endblock %}

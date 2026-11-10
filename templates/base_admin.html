@@ -24,13 +24,23 @@
                 {{ logo(href=url_for('admin_pedidos')) }}
             </div>
 
-            <div class="sidebar-status">
-                <span class="subtle" style="font-size: 0.76rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">Status da Loja</span>
-                {% if loja_aberta %}
-                    <span class="tag tag-yellow">Aberta</span>
-                {% else %}
-                    <span class="tag tag-red">Fechada</span>
-                {% endif %}
+            <div class="sidebar-status" style="flex-direction: column; align-items: stretch; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="subtle" style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">Almoço</span>
+                    {% if almoco_aberto %}
+                        <span class="tag tag-yellow" style="font-size: 0.65rem; padding: 2px 6px;">Aberto</span>
+                    {% else %}
+                        <span class="tag tag-red" style="font-size: 0.65rem; padding: 2px 6px;">Fechado</span>
+                    {% endif %}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="subtle" style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">Lanches</span>
+                    {% if lanches_aberto %}
+                        <span class="tag tag-yellow" style="font-size: 0.65rem; padding: 2px 6px;">Aberto</span>
+                    {% else %}
+                        <span class="tag tag-red" style="font-size: 0.65rem; padding: 2px 6px;">Fechado</span>
+                    {% endif %}
+                </div>
             </div>
 
             <nav class="admin-nav" aria-label="Navegação administrativa">
@@ -41,7 +51,10 @@
                     {{ icon('menu-board') }}<span>Cardápio do Dia</span>
                 </a>
                 <a href="{{ url_for('admin_pratos') }}" {% if request.endpoint in ['admin_pratos', 'edit_prato'] %}class="active"{% endif %}>
-                    {{ icon('list') }}<span>Pratos do Catálogo</span>
+                    {{ icon('utensils') }}<span>Pratos (Almoço)</span>
+                </a>
+                <a href="{{ url_for('admin_lanches') }}" {% if request.endpoint in ['admin_lanches', 'edit_lanche'] %}class="active"{% endif %}>
+                    {{ icon('dog') }}<span>Catálogo de Lanches</span>
                 </a>
                 <a href="{{ url_for('admin_bebidas') }}" {% if request.endpoint in ['admin_bebidas', 'edit_bebida'] %}class="active"{% endif %}>
                     {{ icon('drink') }}<span>Catálogo de Bebidas</span>

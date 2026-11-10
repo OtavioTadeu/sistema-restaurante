@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const TAXA_ENTREGA = parseFloat(meta('taxa-entrega')) || 0;
     const CSRF_TOKEN = meta('csrf-token');
     const LOJA_ABERTA = meta('loja-aberta') !== '0';
+    const TURNO_CARDAPIO = meta('turno-cardapio') || 'almoco';
 
     const brl = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -97,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 quantidade: 1
             };
 
-            const existente = cart.find((i) => i.tipo !== 'bebida' && i.pratoId === novo.pratoId && i.tamanhoId === novo.tamanhoId);
+            const existente = cart.find((i) => i.tipo === 'prato' && i.pratoId === novo.pratoId && i.tamanhoId === novo.tamanhoId);
             if (existente) existente.quantidade++;
             else cart.push(novo);
 
@@ -108,6 +109,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const original = button.innerHTML;
             button.classList.add('is-added');
             button.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>';
+            clearTimeout(button._t);
+            button._t = setTimeout(() => {
+                button.classList.remove('is-added');
+                button.innerHTML = original;
+            }, 700);
+        });
+    });
+
+    // ---- Adicionar lanche ao pedido ----
+    document.querySelectorAll('.btn-add-lanche').forEach((button) => {
+        button.addEventListener('click', () => {
+            if (!LOJA_ABERTA) return;
+
+            const novo = {
+                tipo: 'lanche',
+                lancheId: button.dataset.lancheId,
+                lancheNome: button.dataset.lancheNome,
+                preco: parseFloat(button.dataset.preco),
+                quantidade: 1
+            };
+
+            const existente = cart.find((i) => i.tipo === 'lanche' && i.lancheId === novo.lancheId);
+            if (existente) existente.quantidade++;
+            else cart.push(novo);
+
+            render();
+            bumpBadge();
+
+            // feedback no botão
+            const original = button.innerHTML;
+            button.classList.add('is-added');
+            button.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg><span>Adicionado</span>';
             clearTimeout(button._t);
             button._t = setTimeout(() => {
                 button.classList.remove('is-added');
@@ -161,9 +194,15 @@ document.addEventListener('DOMContentLoaded', () => {
             cartList.innerHTML = EMPTY_HTML;
         } else {
             cartList.innerHTML = cart.map((item, idx) => {
-                const isBebida = item.tipo === 'bebida';
-                const nome = isBebida ? item.bebidaNome : item.pratoNome;
-                const subtitulo = isBebida ? `Bebida · ${brl(item.preco)}` : `${esc(item.tamanhoNome)} · ${brl(item.preco)}`;
+                let nome = item.pratoNome;
+                let subtitulo = `${esc(item.tamanhoNome)} · ${brl(item.preco)}`;
+                if (item.tipo === 'bebida') {
+                    nome = item.bebidaNome;
+                    subtitulo = `Bebida · ${brl(item.preco)}`;
+                } else if (item.tipo === 'lanche') {
+                    nome = item.lancheNome;
+                    subtitulo = `Lanche · ${brl(item.preco)}`;
+                }
 
                 return `
                 <li class="line">
@@ -262,6 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
         itens.forEach((i) => {
             if (i.tipo === 'bebida') {
                 t += `${i.quantidade}x ${i.bebidaNome} — ${brl(i.preco * i.quantidade)}\n`;
+            } else if (i.tipo === 'lanche') {
+                t += `${i.quantidade}x ${i.lancheNome} — ${brl(i.preco * i.quantidade)}\n`;
             } else {
                 t += `${i.quantidade}x ${i.pratoNome} (${i.tamanhoNome}) — ${brl(i.preco * i.quantidade)}\n`;
             }
@@ -302,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetch('/api/finalizar_pedido', {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ pedido: dados, carrinho: cart })
+                body: JSON.stringify({ pedido: dados, carrinho: cart, turno: TURNO_CARDAPIO })
             })
                 .then((r) => r.json())
                 .then((data) => {

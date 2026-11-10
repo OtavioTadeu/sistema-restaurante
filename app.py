@@ -2,7 +2,7 @@ import os
 import json
 import secrets
 import logging
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash
@@ -59,6 +59,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 db = SQLAlchemy(app)
+
+def agora_brasilia():
+    """Retorna a data/hora atual no fuso horário de Brasília (UTC-3), sem tzinfo para compatibilidade com SQLite/Postgres."""
+    return datetime.now(timezone(timedelta(hours=-3))).replace(tzinfo=None)
 
 # --- Upload de Fotos Inteligente ---
 
@@ -151,6 +155,15 @@ class Bebida(db.Model):
     foto_url = db.Column(db.String(500))
     disponivel = db.Column(db.Boolean, default=True, nullable=False)
 
+class Lanche(db.Model):
+    __tablename__ = 'lanche'
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(100), nullable=False)
+    descricao = db.Column(db.String(300))
+    preco = db.Column(db.Float, nullable=False)
+    foto_url = db.Column(db.String(500))
+    disponivel = db.Column(db.Boolean, default=True, nullable=False)
+
 class CardapioDoDia(db.Model):
     __tablename__ = 'cardapio_do_dia'
     id = db.Column(db.Integer, primary_key=True)
@@ -162,7 +175,7 @@ class CardapioDoDia(db.Model):
 class Pedido(db.Model):
     __tablename__ = 'pedido'
     id = db.Column(db.Integer, primary_key=True)
-    data_hora = db.Column(db.DateTime, default=datetime.now)
+    data_hora = db.Column(db.DateTime, default=agora_brasilia)
     nome_cliente = db.Column(db.String(100), nullable=False)
     telefone_cliente = db.Column(db.String(20), nullable=True)
     tipo_pedido = db.Column(db.String(20), nullable=False)
@@ -187,10 +200,12 @@ class ItemPedido(db.Model):
     prato_id = db.Column(db.Integer, db.ForeignKey('prato.id'), nullable=True)
     tamanho_id = db.Column(db.Integer, db.ForeignKey('tamanho.id'), nullable=True)
     bebida_id = db.Column(db.Integer, db.ForeignKey('bebida.id'), nullable=True)
+    lanche_id = db.Column(db.Integer, db.ForeignKey('lanche.id'), nullable=True)
     pedido = db.relationship('Pedido', back_populates='itens')
     prato = db.relationship('Prato')
     tamanho = db.relationship('Tamanho')
     bebida = db.relationship('Bebida')
+    lanche = db.relationship('Lanche')
 
 # --- Funções de Autenticação e Permissão ---
 
@@ -230,22 +245,96 @@ def cliente_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def esta_no_horario(inicio_str, fim_str, agora=None):
+    """Verifica se o horário atual de Brasília está dentro da faixa [inicio_str, fim_str] (suporta virada de meia-noite)."""
+    try:
+        if agora is None:
+            agora = agora_brasilia()
+        h_ini, m_ini = map(int, inicio_str.strip().split(':'))
+        h_fim, m_fim = map(int, fim_str.strip().split(':'))
+        min_atual = agora.hour * 60 + agora.minute
+        min_ini = h_ini * 60 + m_ini
+        min_fim = h_fim * 60 + m_fim
+        if min_ini <= min_fim:
+            return min_ini <= min_atual <= min_fim
+        else:
+            return min_atual >= min_ini or min_atual <= min_fim
+    except Exception:
+        return False
+
+def obter_status_turnos():
+    """Retorna o status calculado e configurações dos turnos de Almoço e Lanches."""
+    agora = agora_brasilia()
+
+    modo_almoco = Configuracao.get('modo_almoco', 'AUTOMATICO')
+    horario_almoco_inicio = Configuracao.get('horario_almoco_inicio', '11:00')
+    horario_almoco_fim = Configuracao.get('horario_almoco_fim', '14:30')
+    msg_almoco_fechado = Configuracao.get(
+        'msg_almoco_fechado',
+        'O atendimento do almoço está encerrado no momento.'
+    )
+
+    if modo_almoco == 'ABERTO':
+        almoco_aberto = True
+    elif modo_almoco == 'FECHADO':
+        almoco_aberto = False
+    else:
+        almoco_aberto = esta_no_horario(horario_almoco_inicio, horario_almoco_fim, agora)
+
+    modo_lanches = Configuracao.get('modo_lanches', 'AUTOMATICO')
+    horario_lanches_inicio = Configuracao.get('horario_lanches_inicio', '18:00')
+    horario_lanches_fim = Configuracao.get('horario_lanches_fim', '23:30')
+    msg_lanches_fechado = Configuracao.get(
+        'msg_lanches_fechado',
+        'O atendimento de lanches está fechado no momento.'
+    )
+
+    if modo_lanches == 'ABERTO':
+        lanches_aberto = True
+    elif modo_lanches == 'FECHADO':
+        lanches_aberto = False
+    else:
+        lanches_aberto = esta_no_horario(horario_lanches_inicio, horario_lanches_fim, agora)
+
+    loja_aberta = almoco_aberto or lanches_aberto
+    msg_geral = Configuracao.get(
+        'mensagem_loja_fechada',
+        f'Almoço das {horario_almoco_inicio} às {horario_almoco_fim} · Lanches das {horario_lanches_inicio} às {horario_lanches_fim}'
+    )
+
+    return {
+        'modo_almoco': modo_almoco,
+        'horario_almoco_inicio': horario_almoco_inicio,
+        'horario_almoco_fim': horario_almoco_fim,
+        'msg_almoco_fechado': msg_almoco_fechado,
+        'almoco_aberto': almoco_aberto,
+        'modo_lanches': modo_lanches,
+        'horario_lanches_inicio': horario_lanches_inicio,
+        'horario_lanches_fim': horario_lanches_fim,
+        'msg_lanches_fechado': msg_lanches_fechado,
+        'lanches_aberto': lanches_aberto,
+        'loja_aberta': loja_aberta,
+        'mensagem_loja_fechada': msg_geral,
+        'hora_atual_br': agora.strftime('%H:%M')
+    }
+
 # Context processor para disponibilizar CSRF e configurações nos templates
 @app.context_processor
 def inject_global_vars():
-    hoje = datetime.now()
+    hoje = agora_brasilia()
     dias_semana = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
     meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
     data_formatada = f"{dias_semana[hoje.weekday()]}, {hoje.day} de {meses[hoje.month - 1]}"
 
-    return {
+    status_turnos = obter_status_turnos()
+    variaveis = {
         'data_hoje': data_formatada,
-        'loja_aberta': Configuracao.get('loja_aberta', '1') == '1',
-        'mensagem_loja_fechada': Configuracao.get('mensagem_loja_fechada', 'Estamos fechados no momento.'),
         'taxa_entrega_padrao': float(Configuracao.get('taxa_entrega', '0.00') or 0.0),
         'restaurante_whatsapp': Configuracao.get('restaurante_whatsapp', os.getenv('RESTAURANTE_WHATSAPP', '553194585341')),
         'deve_trocar_senha': Configuracao.get('deve_trocar_senha', '0') == '1'
     }
+    variaveis.update(status_turnos)
+    return variaveis
 
 # --- Rotas de Autenticação Admin ---
 
@@ -287,8 +376,20 @@ def admin_configuracoes():
                 flash('Senha de administrador alterada com sucesso!', 'success')
 
         elif acao == 'atualizar_loja':
-            loja_aberta = '1' if request.form.get('loja_aberta') == 'on' else '0'
-            msg = request.form.get('mensagem_loja_fechada', '').strip()
+            modo_almoco = request.form.get('modo_almoco', 'AUTOMATICO')
+            if modo_almoco not in ('AUTOMATICO', 'ABERTO', 'FECHADO'):
+                modo_almoco = 'AUTOMATICO'
+            horario_almoco_inicio = request.form.get('horario_almoco_inicio', '11:00').strip() or '11:00'
+            horario_almoco_fim = request.form.get('horario_almoco_fim', '14:30').strip() or '14:30'
+            msg_almoco_fechado = request.form.get('msg_almoco_fechado', '').strip()
+
+            modo_lanches = request.form.get('modo_lanches', 'AUTOMATICO')
+            if modo_lanches not in ('AUTOMATICO', 'ABERTO', 'FECHADO'):
+                modo_lanches = 'AUTOMATICO'
+            horario_lanches_inicio = request.form.get('horario_lanches_inicio', '18:00').strip() or '18:00'
+            horario_lanches_fim = request.form.get('horario_lanches_fim', '23:30').strip() or '23:30'
+            msg_lanches_fechado = request.form.get('msg_lanches_fechado', '').strip()
+
             taxa = request.form.get('taxa_entrega', '0.00').replace(',', '.').strip()
             whatsapp = request.form.get('restaurante_whatsapp', '').strip()
             whatsapp_limpo = ''.join(c for c in whatsapp if c.isdigit())
@@ -298,14 +399,26 @@ def admin_configuracoes():
             except ValueError:
                 taxa = '0.00'
 
-            Configuracao.set('loja_aberta', loja_aberta)
-            if msg:
-                Configuracao.set('mensagem_loja_fechada', msg)
+            Configuracao.set('modo_almoco', modo_almoco)
+            Configuracao.set('horario_almoco_inicio', horario_almoco_inicio)
+            Configuracao.set('horario_almoco_fim', horario_almoco_fim)
+            if msg_almoco_fechado:
+                Configuracao.set('msg_almoco_fechado', msg_almoco_fechado)
+
+            Configuracao.set('modo_lanches', modo_lanches)
+            Configuracao.set('horario_lanches_inicio', horario_lanches_inicio)
+            Configuracao.set('horario_lanches_fim', horario_lanches_fim)
+            if msg_lanches_fechado:
+                Configuracao.set('msg_lanches_fechado', msg_lanches_fechado)
+
             Configuracao.set('taxa_entrega', taxa)
             if whatsapp_limpo:
                 Configuracao.set('restaurante_whatsapp', whatsapp_limpo)
 
-            flash('Configurações da loja atualizadas com sucesso!', 'success')
+            status_atual = obter_status_turnos()
+            Configuracao.set('loja_aberta', '1' if status_atual['loja_aberta'] else '0')
+
+            flash('Configurações de funcionamento e entregas atualizadas com sucesso!', 'success')
 
     return render_template('admin_configuracoes.html')
 
@@ -430,12 +543,14 @@ def admin_cardapio():
         pratos_catalogo = Prato.query.all()
         cardapio_hoje = CardapioDoDia.query.options(db.joinedload(CardapioDoDia.prato)).all()
         bebidas = Bebida.query.order_by(Bebida.nome).all()
+        lanches = Lanche.query.order_by(Lanche.nome).all()
     except Exception as e:
         logger.error(f"Erro ao carregar cardápio: {e}")
         pratos_catalogo = []
         cardapio_hoje = []
         bebidas = []
-    return render_template('admin_cardapio.html', pratos_catalogo=pratos_catalogo, cardapio_hoje=cardapio_hoje, bebidas=bebidas)
+        lanches = []
+    return render_template('admin_cardapio.html', pratos_catalogo=pratos_catalogo, cardapio_hoje=cardapio_hoje, bebidas=bebidas, lanches=lanches)
 
 @app.route('/admin/add_tamanho', methods=['POST'])
 @login_required
@@ -635,6 +750,100 @@ def delete_bebida(bebida_id):
     next_url = request.form.get('next') or request.referrer or url_for('admin_bebidas')
     return redirect(next_url)
 
+# --- Rotas Admin (Gestão de Lanches) ---
+
+@app.route('/admin/lanches')
+@login_required
+def admin_lanches():
+    try:
+        lanches = Lanche.query.order_by(Lanche.nome).all()
+    except Exception as e:
+        logger.error(f"Erro ao carregar lanches: {e}")
+        lanches = []
+    return render_template('admin_lanches.html', lanches=lanches)
+
+@app.route('/admin/lanches/add', methods=['POST'])
+@login_required
+def add_lanche():
+    try:
+        nome = request.form['nome'].strip()
+        preco = float(request.form['preco'].replace(',', '.'))
+        descricao = request.form.get('descricao', '').strip()
+        foto_url = request.form.get('foto_url', '').strip()
+        foto_arquivo = request.files.get('foto_arquivo')
+        if foto_arquivo and foto_arquivo.filename != '':
+            foto_url = upload_foto_prato(foto_arquivo)
+
+        novo_lanche = Lanche(nome=nome, descricao=descricao, preco=preco, foto_url=foto_url, disponivel=True)
+        db.session.add(novo_lanche)
+        db.session.commit()
+        flash('Lanche adicionado com sucesso. Ele já está disponível no cardápio da noite!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao adicionar lanche: {e}")
+        flash('Erro ao adicionar lanche. Verifique os dados e tente novamente.', 'error')
+    next_url = request.form.get('next') or url_for('admin_lanches')
+    return redirect(next_url)
+
+@app.route('/admin/lanches/<int:lanche_id>/toggle', methods=['POST'])
+@login_required
+def toggle_disponivel_lanche(lanche_id):
+    try:
+        lanche = db.session.get(Lanche, lanche_id)
+        if lanche:
+            lanche.disponivel = not lanche.disponivel
+            db.session.commit()
+            estado = "disponível" if lanche.disponivel else "esgotado"
+            flash(f"Lanche '{lanche.nome}' marcado como {estado}.", 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao alternar status do lanche {lanche_id}: {e}")
+        flash('Erro ao alterar status do lanche.', 'error')
+    next_url = request.form.get('next') or request.referrer or url_for('admin_lanches')
+    return redirect(next_url)
+
+@app.route('/admin/lanches/<int:lanche_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_lanche(lanche_id):
+    lanche = Lanche.query.get_or_404(lanche_id)
+    if request.method == 'POST':
+        try:
+            lanche.nome = request.form['nome'].strip()
+            lanche.preco = float(request.form['preco'].replace(',', '.'))
+            lanche.descricao = request.form.get('descricao', '').strip()
+
+            foto_arquivo = request.files.get('foto_arquivo')
+            if foto_arquivo and foto_arquivo.filename != '':
+                lanche.foto_url = upload_foto_prato(foto_arquivo)
+            elif request.form.get('foto_url'):
+                lanche.foto_url = request.form.get('foto_url').strip()
+
+            db.session.commit()
+            flash('Lanche atualizado com sucesso.', 'success')
+            next_url = request.form.get('next') or url_for('admin_lanches')
+            return redirect(next_url)
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Erro ao editar lanche {lanche_id}: {e}")
+            flash('Erro ao atualizar lanche.', 'error')
+    return render_template('edit_lanche.html', lanche=lanche)
+
+@app.route('/admin/lanches/<int:lanche_id>/delete', methods=['POST'])
+@login_required
+def delete_lanche(lanche_id):
+    try:
+        lanche = db.session.get(Lanche, lanche_id)
+        if lanche:
+            db.session.delete(lanche)
+            db.session.commit()
+            flash('Lanche excluído com sucesso.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao excluir lanche {lanche_id}: {e}")
+        flash('Não é possível excluir este lanche pois ele já está vinculado a pedidos históricos. Você pode marcá-lo como esgotado.', 'error')
+    next_url = request.form.get('next') or request.referrer or url_for('admin_lanches')
+    return redirect(next_url)
+
 @app.route('/admin/add_cardapio', methods=['POST'])
 @login_required
 def add_cardapio():
@@ -709,7 +918,7 @@ def admin_pedidos():
         if data_filtro_str:
             data_filtro = datetime.strptime(data_filtro_str, '%Y-%m-%d').date()
         else:
-            data_filtro = datetime.today().date()
+            data_filtro = agora_brasilia().date()
             
         start_of_day = datetime.combine(data_filtro, datetime.min.time())
         end_of_day = datetime.combine(data_filtro, datetime.max.time())
@@ -768,9 +977,9 @@ def api_pedidos_novos():
         try:
             data_filtro = datetime.strptime(data_filtro_str, '%Y-%m-%d').date()
         except ValueError:
-            data_filtro = datetime.today().date()
+            data_filtro = agora_brasilia().date()
     else:
-        data_filtro = datetime.today().date()
+        data_filtro = agora_brasilia().date()
 
     start_of_day = datetime.combine(data_filtro, datetime.min.time())
     end_of_day = datetime.combine(data_filtro, datetime.max.time())
@@ -803,6 +1012,18 @@ def index():
 
 @app.route('/cardapio')
 def cardapio():
+    """Tela de escolha entre Cardápio do Almoço e Cardápio de Lanches."""
+    cliente = None
+    if 'cliente_id' in session:
+        try:
+            cliente = db.session.get(Cliente, session['cliente_id'])
+        except Exception as e:
+            logger.error(f"Erro ao buscar cliente logado: {e}")
+    return render_template('escolha_cardapio.html', cliente=cliente)
+
+@app.route('/cardapio/almoco')
+def cardapio_almoco():
+    status = obter_status_turnos()
     try:
         cardapio_hoje = CardapioDoDia.query.filter_by(disponivel=True).all()
         tamanhos = Tamanho.query.order_by(Tamanho.preco).all()
@@ -811,12 +1032,52 @@ def cardapio():
         if 'cliente_id' in session:
             cliente = db.session.get(Cliente, session['cliente_id'])
     except Exception as e:
-        logger.error(f"Erro ao carregar cardápio público: {e}")
+        logger.error(f"Erro ao carregar cardápio do almoço: {e}")
         cardapio_hoje = []
         tamanhos = []
         bebidas = []
         cliente = None
-    return render_template('index.html', cardapio_hoje=cardapio_hoje, tamanhos=tamanhos, bebidas=bebidas, cliente=cliente)
+    return render_template(
+        'index.html',
+        turno='almoco',
+        turno_aberto=status['almoco_aberto'],
+        loja_aberta=status['almoco_aberto'],
+        mensagem_loja_fechada=status['msg_almoco_fechado'],
+        horario_turno=f"{status['horario_almoco_inicio']} às {status['horario_almoco_fim']}",
+        cardapio_hoje=cardapio_hoje,
+        tamanhos=tamanhos,
+        bebidas=bebidas,
+        lanches=[],
+        cliente=cliente
+    )
+
+@app.route('/cardapio/lanches')
+def cardapio_lanches():
+    status = obter_status_turnos()
+    try:
+        lanches = Lanche.query.filter_by(disponivel=True).order_by(Lanche.nome).all()
+        bebidas = Bebida.query.filter_by(disponivel=True).order_by(Bebida.nome).all()
+        cliente = None
+        if 'cliente_id' in session:
+            cliente = db.session.get(Cliente, session['cliente_id'])
+    except Exception as e:
+        logger.error(f"Erro ao carregar cardápio de lanches: {e}")
+        lanches = []
+        bebidas = []
+        cliente = None
+    return render_template(
+        'index.html',
+        turno='lanches',
+        turno_aberto=status['lanches_aberto'],
+        loja_aberta=status['lanches_aberto'],
+        mensagem_loja_fechada=status['msg_lanches_fechado'],
+        horario_turno=f"{status['horario_lanches_inicio']} às {status['horario_lanches_fim']}",
+        cardapio_hoje=[],
+        tamanhos=[],
+        bebidas=bebidas,
+        lanches=lanches,
+        cliente=cliente
+    )
 
 # --- Formatação e Fila de Impressão ---
 
@@ -853,6 +1114,9 @@ def formatar_texto_cupom(pedido):
     for item in pedido.itens:
         if item.bebida_id and item.bebida:
             nome_item = item.bebida.nome
+            linha_item = f"{item.quantidade}x {nome_item}"
+        elif item.lanche_id and item.lanche:
+            nome_item = item.lanche.nome
             linha_item = f"{item.quantidade}x {nome_item}"
         else:
             nome_prato = item.prato.nome_prato if item.prato else "Item"
@@ -940,7 +1204,7 @@ def agente_confirmar_impressao(pedido_id):
         return jsonify({"success": False, "message": "Pedido não encontrado."}), 404
 
     pedido.impresso = True
-    pedido.impresso_em = datetime.now()
+    pedido.impresso_em = agora_brasilia()
     db.session.commit()
     return jsonify({"success": True, "message": f"Pedido #{pedido_id} marcado como impresso."})
 
@@ -948,21 +1212,32 @@ def agente_confirmar_impressao(pedido_id):
 
 @app.route('/api/finalizar_pedido', methods=['POST'])
 def api_finalizar_pedido():
-    # Validar se a loja está aberta
-    loja_aberta = Configuracao.get('loja_aberta', '1') == '1'
-    if not loja_aberta:
-        msg = Configuracao.get('mensagem_loja_fechada', 'Estamos fechados no momento.')
-        return jsonify({"success": False, "message": f"A lanchonete está fechada agora: {msg}"}), 400
-
     if not request.is_json:
         return jsonify({"success": False, "message": "Erro: Formato inválido."}), 400
 
     data = request.get_json()
     dados_pedido = data.get('pedido')
     itens_carrinho = data.get('carrinho')
+    turno = data.get('turno')
 
     if not dados_pedido or not itens_carrinho:
         return jsonify({"success": False, "message": "Dados incompletos."}), 400
+
+    status = obter_status_turnos()
+
+    # Validar se o turno solicitado (ou inferido pelos itens) está aberto
+    tem_prato = any(item.get('tipo') == 'prato' or item.get('pratoId') for item in itens_carrinho)
+    tem_lanche = any(item.get('tipo') == 'lanche' or item.get('lancheId') for item in itens_carrinho)
+
+    if turno == 'almoco' or tem_prato:
+        if not status['almoco_aberto']:
+            return jsonify({"success": False, "message": f"Atendimento do almoço encerrado: {status['msg_almoco_fechado']}"}), 400
+    elif turno == 'lanches' or tem_lanche:
+        if not status['lanches_aberto']:
+            return jsonify({"success": False, "message": f"Atendimento de lanches fechado: {status['msg_lanches_fechado']}"}), 400
+    else:
+        if not status['loja_aberta']:
+            return jsonify({"success": False, "message": f"O estabelecimento está fechado no momento."}), 400
 
     try:
         cliente_id = session.get('cliente_id')
@@ -1001,6 +1276,19 @@ def api_finalizar_pedido():
                     bebida_id=bebida.id,
                     quantidade=quantidade,
                     preco_unitario_pago=bebida.preco
+                )
+                db.session.add(novo_item)
+            elif item.get('tipo') == 'lanche' or item.get('lancheId'):
+                lanche_id = int(item['lancheId'])
+                lanche = db.session.get(Lanche, lanche_id)
+                if not lanche:
+                    db.session.rollback()
+                    return jsonify({"success": False, "message": "Lanche inválido no carrinho."}), 400
+                novo_item = ItemPedido(
+                    pedido_id=novo_pedido.id,
+                    lanche_id=lanche.id,
+                    quantidade=quantidade,
+                    preco_unitario_pago=lanche.preco
                 )
                 db.session.add(novo_item)
             else:
@@ -1043,14 +1331,16 @@ def executar_migracoes_banco():
             dialect = db.engine.dialect.name
             if dialect == 'postgresql':
                 conn.execute(db.text("CREATE TABLE IF NOT EXISTS bebida (id SERIAL PRIMARY KEY, nome VARCHAR(100) NOT NULL, descricao VARCHAR(200), preco FLOAT NOT NULL, foto_url VARCHAR(500), disponivel BOOLEAN DEFAULT TRUE NOT NULL);"))
+                conn.execute(db.text("CREATE TABLE IF NOT EXISTS lanche (id SERIAL PRIMARY KEY, nome VARCHAR(100) NOT NULL, descricao VARCHAR(300), preco FLOAT NOT NULL, foto_url VARCHAR(500), disponivel BOOLEAN DEFAULT TRUE NOT NULL);"))
                 conn.execute(db.text("ALTER TABLE item_pedido ADD COLUMN IF NOT EXISTS bebida_id INTEGER REFERENCES bebida(id);"))
+                conn.execute(db.text("ALTER TABLE item_pedido ADD COLUMN IF NOT EXISTS lanche_id INTEGER REFERENCES lanche(id);"))
                 conn.execute(db.text("ALTER TABLE item_pedido ALTER COLUMN prato_id DROP NOT NULL;"))
                 conn.execute(db.text("ALTER TABLE item_pedido ALTER COLUMN tamanho_id DROP NOT NULL;"))
                 conn.commit()
             elif dialect == 'sqlite':
                 res = conn.execute(db.text("PRAGMA table_info(item_pedido);")).fetchall()
                 cols = {r[1]: r for r in res}
-                if cols and ('bebida_id' not in cols or (cols.get('prato_id') and cols['prato_id'][3] == 1)):
+                if cols and ('bebida_id' not in cols or 'lanche_id' not in cols or (cols.get('prato_id') and cols['prato_id'][3] == 1)):
                     conn.execute(db.text("""
                         CREATE TABLE IF NOT EXISTS item_pedido_new (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1059,10 +1349,13 @@ def executar_migracoes_banco():
                             pedido_id INTEGER NOT NULL REFERENCES pedido(id),
                             prato_id INTEGER REFERENCES prato(id),
                             tamanho_id INTEGER REFERENCES tamanho(id),
-                            bebida_id INTEGER REFERENCES bebida(id)
+                            bebida_id INTEGER REFERENCES bebida(id),
+                            lanche_id INTEGER REFERENCES lanche(id)
                         );
                     """))
-                    if 'bebida_id' in cols:
+                    if 'lanche_id' in cols and 'bebida_id' in cols:
+                        conn.execute(db.text("INSERT INTO item_pedido_new (id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id, bebida_id, lanche_id) SELECT id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id, bebida_id, lanche_id FROM item_pedido;"))
+                    elif 'bebida_id' in cols:
                         conn.execute(db.text("INSERT INTO item_pedido_new (id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id, bebida_id) SELECT id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id, bebida_id FROM item_pedido;"))
                     else:
                         conn.execute(db.text("INSERT INTO item_pedido_new (id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id) SELECT id, quantidade, preco_unitario_pago, pedido_id, prato_id, tamanho_id FROM item_pedido;"))
@@ -1085,6 +1378,24 @@ with app.app_context():
 
     if Configuracao.get('mensagem_loja_fechada') == '':
         Configuracao.set('mensagem_loja_fechada', 'Estamos fechados no momento. Nosso expediente começará em breve!')
+
+    if Configuracao.get('modo_almoco') == '':
+        Configuracao.set('modo_almoco', 'AUTOMATICO')
+    if Configuracao.get('horario_almoco_inicio') == '':
+        Configuracao.set('horario_almoco_inicio', '11:00')
+    if Configuracao.get('horario_almoco_fim') == '':
+        Configuracao.set('horario_almoco_fim', '14:30')
+    if Configuracao.get('msg_almoco_fechado') == '':
+        Configuracao.set('msg_almoco_fechado', 'O atendimento do almoço está encerrado no momento.')
+
+    if Configuracao.get('modo_lanches') == '':
+        Configuracao.set('modo_lanches', 'AUTOMATICO')
+    if Configuracao.get('horario_lanches_inicio') == '':
+        Configuracao.set('horario_lanches_inicio', '18:00')
+    if Configuracao.get('horario_lanches_fim') == '':
+        Configuracao.set('horario_lanches_fim', '23:30')
+    if Configuracao.get('msg_lanches_fechado') == '':
+        Configuracao.set('msg_lanches_fechado', 'O atendimento de lanches está fechado no momento.')
 
     if Configuracao.get('taxa_entrega') == '':
         Configuracao.set('taxa_entrega', '0.00')
